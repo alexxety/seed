@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh-keygen -t ed25519 -C \"github-actions\" -f ~/.ssh/github_actions_telegram_shop -N \"\")",
+      "Bash(ssh-copy-id -i ~/.ssh/github_actions_telegram_shop.pub root@143.198.141.222)",
+      "Bash(git init)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"Initial commit: Telegram Mini App with auto-deploy\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

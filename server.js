@@ -1,7 +1,7 @@
 const express = require('express');
 const https = require('https');
 const path = require('path');
-const { createOrder, getOrderByNumber, getOrderById } = require('./database');
+const { createOrder, getOrderByNumber, getOrderById, getAllOrders } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -127,6 +127,43 @@ app.get('/api/order/:orderNumber', (req, res) => {
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Failed to fetch order', details: error.message });
+  }
+});
+
+// API endpoint для получения всех заказов (с базовой аутентификацией)
+app.get('/api/orders', (req, res) => {
+  try {
+    // Базовая аутентификация
+    const authHeader = req.headers.authorization;
+    const expectedAuth = 'Basic ' + Buffer.from('admin:seed2025').toString('base64');
+
+    if (!authHeader || authHeader !== expectedAuth) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const limit = parseInt(req.query.limit) || 100;
+    const orders = getAllOrders(limit);
+
+    res.json({
+      success: true,
+      count: orders.length,
+      orders: orders.map(order => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        fullName: order.full_name,
+        phone: order.phone,
+        deliveryType: order.delivery_type,
+        deliveryDetails: order.delivery_details,
+        items: order.items,
+        total: order.total,
+        createdAt: order.created_at,
+        status: order.status
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders', details: error.message });
   }
 });
 

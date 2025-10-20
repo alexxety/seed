@@ -19,13 +19,16 @@ function sendTelegramMessage(message) {
       parse_mode: 'HTML'
     });
 
+    console.log('Data to send:', data.substring(0, 200));
+    console.log('Data length:', data.length);
+
     const options = {
       hostname: 'api.telegram.org',
       path: `/bot${BOT_TOKEN}/sendMessage`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': data.length
+        'Content-Length': Buffer.byteLength(data)
       }
     };
 

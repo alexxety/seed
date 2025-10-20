@@ -22,10 +22,39 @@
             margin: 0 auto;
         }
 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         h1 {
             color: #333;
-            margin-bottom: 20px;
             font-size: 28px;
+            margin: 0;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .session-timer {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
         }
 
         .stats {
@@ -179,7 +208,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>🛒 Админ-панель - Заказы</h1>
+        <div class="header">
+            <div>
+                <h1>🛒 Админ-панель - Заказы</h1>
+                <div class="session-timer" id="sessionTimer"></div>
+            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Выход</button>
+        </div>
 
         <div class="stats">
             <div class="stat-card">
@@ -225,6 +260,62 @@
 
     <script>
         let allOrders = [];
+        let inactivityTimer;
+        let sessionStartTime = Date.now();
+        const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 час в миллисекундах
+
+        // Функция выхода
+        function logout() {
+            // Очищаем все таймеры
+            clearTimeout(inactivityTimer);
+            clearInterval(window.statsUpdateInterval);
+            clearInterval(window.timerUpdateInterval);
+
+            // Показываем сообщение
+            alert('Вы вышли из админ-панели');
+
+            // Перенаправляем на главную страницу (это заставит браузер запросить логин заново)
+            window.location.href = '/';
+        }
+
+        // Функция обновления таймера сессии
+        function updateSessionTimer() {
+            const elapsed = Date.now() - sessionStartTime;
+            const remaining = INACTIVITY_TIMEOUT - elapsed;
+
+            if (remaining <= 0) {
+                logout();
+                return;
+            }
+
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+
+            document.getElementById('sessionTimer').textContent =
+                `⏱ Автовыход через: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Функция сброса таймера неактивности
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            sessionStartTime = Date.now();
+
+            inactivityTimer = setTimeout(() => {
+                alert('Сессия истекла из-за неактивности');
+                logout();
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        // Отслеживаем активность пользователя
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+
+        // Запускаем таймер при загрузке страницы
+        resetInactivityTimer();
+
+        // Обновляем отображение таймера каждую секунду
+        window.timerUpdateInterval = setInterval(updateSessionTimer, 1000);
 
         async function loadOrders() {
             try {
@@ -323,7 +414,7 @@
         loadOrders();
 
         // Автообновление каждые 30 секунд
-        setInterval(loadOrders, 30000);
+        window.statsUpdateInterval = setInterval(loadOrders, 30000);
     </script>
 </body>
 </html>

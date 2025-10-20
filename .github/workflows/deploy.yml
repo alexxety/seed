@@ -38,8 +38,8 @@ jobs:
 
       - name: Install dependencies on server
         run: |
-          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
 
       - name: Restart server
         run: |
-          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && pm2 reload telegram-shop || pm2 start server.js --name telegram-shop"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && pm2 reload telegram-shop || pm2 start server.js --name telegram-shop"

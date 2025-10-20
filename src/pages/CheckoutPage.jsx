@@ -44,37 +44,20 @@ export default function CheckoutPage({ cart, total, onBack }) {
   };
 
   const sendToTelegram = async (orderData) => {
-    const tg = window.Telegram.WebApp;
-    const chatId = '-1004869379501';
+    const response = await fetch('/api/send-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderData)
+    });
 
-    const itemsList = cart.map(item =>
-      `• ${item.name} - ${item.quantity} шт. × ${item.price} ₽ = ${(item.price * item.quantity).toLocaleString('ru-RU')} ₽`
-    ).join('\n');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to send order');
+    }
 
-    const deliveryLabel = formData.deliveryType === 'address' ? '📍 По адресу' : '📦 СДЕК ПВЗ';
-    const deliveryDetailsLabel = formData.deliveryType === 'address' ? 'Адрес' : 'Номер ПВЗ';
-
-    const message = `🛒 НОВЫЙ ЗАКАЗ!
-
-👤 ФИО: ${formData.fullName}
-📱 Телефон: ${formData.phone}
-🚚 Доставка: ${deliveryLabel}
-${deliveryDetailsLabel}: ${formData.deliveryDetails}
-
-📦 Товары:
-${itemsList}
-
-💰 Итого: ${total.toLocaleString('ru-RU')} ₽`;
-
-    // Отправляем через Telegram WebApp API
-    tg.sendData(JSON.stringify({
-      chatId,
-      message,
-      order: orderData
-    }));
-
-    // Закрываем WebApp после отправки
-    tg.close();
+    return await response.json();
   };
 
   const handleSubmit = async (e) => {
@@ -94,6 +77,16 @@ ${itemsList}
 
     try {
       await sendToTelegram(orderData);
+
+      // Показать успешное сообщение
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        tg.showAlert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
+        tg.close();
+      } else {
+        alert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
+        window.location.href = '/';
+      }
     } catch (error) {
       console.error('Ошибка отправки заказа:', error);
       alert('Ошибка при оформлении заказа. Попробуйте еще раз.');

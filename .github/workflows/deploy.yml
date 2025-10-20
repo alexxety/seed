@@ -33,8 +33,9 @@ jobs:
 
       - name: Deploy to Droplet
         run: |
-          rsync -avz --delete dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          rsync -avz --delete dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/dist/
+          rsync -avz server.js package.json ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
-      - name: Restart nginx
+      - name: Install production dependencies and restart server
         run: |
-          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "sudo systemctl reload nginx"
+          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --production && pm2 restart telegram-shop || pm2 start server.js --name telegram-shop"

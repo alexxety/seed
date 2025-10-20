@@ -36,7 +36,9 @@ jobs:
 
       - name: Deploy to Droplet
         run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" --delete --exclude='node_modules' dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          # Sync dist files (HTML, CSS, JS assets) without deleting anything
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          # Sync server files
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
       # Note: Dependencies are already installed on the server

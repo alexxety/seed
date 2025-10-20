@@ -4,13 +4,15 @@ import ProductList from './pages/ProductList';
 import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
 import './App.css';
 
 function App() {
-  const [page, setPage] = useState('list'); // 'list', 'product', 'cart', 'checkout'
+  const [page, setPage] = useState('list'); // 'list', 'product', 'cart', 'checkout', 'success'
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [cart, setCart] = useState([]);
+  const [orderNumber, setOrderNumber] = useState(null);
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -56,6 +58,18 @@ function App() {
   const openProduct = (product) => {
     setSelectedProduct(product);
     setPage('product');
+  };
+
+  const handleOrderSuccess = (orderNum) => {
+    setOrderNumber(orderNum);
+    setCart([]); // Очищаем корзину
+    setPage('success');
+  };
+
+  const handleBackToHome = () => {
+    setPage('list');
+    setSelectedCategory(null);
+    setOrderNumber(null);
   };
 
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -104,6 +118,14 @@ function App() {
           cart={cart}
           total={cartTotal}
           onBack={() => setPage('cart')}
+          onOrderSuccess={handleOrderSuccess}
+        />
+      )}
+
+      {page === 'success' && (
+        <OrderSuccessPage
+          orderNumber={orderNumber}
+          onBackToHome={handleBackToHome}
         />
       )}
     </div>

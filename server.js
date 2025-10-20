@@ -1,6 +1,7 @@
 const express = require('express');
 const https = require('https');
 const path = require('path');
+const { createOrder, getOrderByNumber, getOrderById } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,6 +63,9 @@ app.post('/api/send-order', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Сохраняем заказ в базу данных
+    const order = createOrder(customer, items, total);
+
     // Формируем список товаров
     const itemsList = items.map(item =>
       `• ${item.name} - ${item.quantity} шт. × ${item.price} ₽ = ${(item.price * item.quantity).toLocaleString('ru-RU')} ₽`
@@ -70,7 +74,7 @@ app.post('/api/send-order', async (req, res) => {
     const deliveryLabel = customer.deliveryType === 'address' ? '📍 По адресу' : '📦 СДЕК ПВЗ';
     const deliveryDetailsLabel = customer.deliveryType === 'address' ? 'Адрес' : 'Номер ПВЗ';
 
-    const message = `🛒 <b>НОВЫЙ ЗАКАЗ!</b>
+    const message = `🛒 <b>НОВЫЙ ЗАКАЗ #${order.orderNumber}</b>
 
 👤 <b>ФИО:</b> ${customer.fullName}
 📱 <b>Телефон:</b> ${customer.phone}
@@ -84,10 +88,45 @@ ${itemsList}
 
     await sendTelegramMessage(message);
 
-    res.json({ success: true, message: 'Order sent successfully' });
+    res.json({
+      success: true,
+      message: 'Order sent successfully',
+      orderNumber: order.orderNumber,
+      orderId: order.id
+    });
   } catch (error) {
     console.error('Error sending order:', error);
     res.status(500).json({ error: 'Failed to send order', details: error.message });
+  }
+});
+
+// API endpoint для получения информации о заказе
+app.get('/api/order/:orderNumber', (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    const order = getOrderByNumber(orderNumber);
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({
+      success: true,
+      order: {
+        orderNumber: order.order_number,
+        fullName: order.full_name,
+        phone: order.phone,
+        deliveryType: order.delivery_type,
+        deliveryDetails: order.delivery_details,
+        items: order.items,
+        total: order.total,
+        createdAt: order.created_at,
+        status: order.status
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: 'Failed to fetch order', details: error.message });
   }
 });
 

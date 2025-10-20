@@ -35,3 +35,7 @@ GITHUB_SECRET_KEY.txt
 *.pem
 *.key
 .ssh/
+
+# Database
+orders.db
+orders.db-journal

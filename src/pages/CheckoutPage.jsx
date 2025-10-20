@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './CheckoutPage.css';
 
-export default function CheckoutPage({ cart, total, onBack }) {
+export default function CheckoutPage({ cart, total, onBack, onOrderSuccess }) {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -76,22 +76,11 @@ export default function CheckoutPage({ cart, total, onBack }) {
     };
 
     try {
-      await sendToTelegram(orderData);
+      const result = await sendToTelegram(orderData);
 
-      // Показать успешное сообщение
-      const tg = window.Telegram?.WebApp;
-      if (tg && typeof tg.showAlert === 'function') {
-        try {
-          tg.showAlert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
-          tg.close();
-        } catch (e) {
-          // Если showAlert не поддерживается, используем обычный alert
-          alert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
-          window.location.href = '/';
-        }
-      } else {
-        alert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
-        window.location.href = '/';
+      // Переходим на страницу успешного заказа
+      if (result.orderNumber) {
+        onOrderSuccess(result.orderNumber);
       }
     } catch (error) {
       console.error('Ошибка отправки заказа:', error);

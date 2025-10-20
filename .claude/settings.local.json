@@ -5,7 +5,15 @@
       "Bash(ssh-copy-id -i ~/.ssh/github_actions_telegram_shop.pub root@143.198.141.222)",
       "Bash(git init)",
       "Bash(git add .)",
-      "Bash(git commit -m \"Initial commit: Telegram Mini App with auto-deploy\")"
+      "Bash(git commit -m \"Initial commit: Telegram Mini App with auto-deploy\")",
+      "Read(//Users/raketa23/.ssh/**)",
+      "Bash(git commit --allow-empty -m \"Trigger deployment\")",
+      "Bash(git push)",
+      "Bash(ssh root@143.198.141.222 'systemctl status nginx --no-pager')",
+      "Bash(git add .github/workflows/deploy.yml)",
+      "Bash(git commit -m \"Use rsync instead of scp-action for deployment\")",
+      "Bash(cat ~/.ssh/github_deploy.pub)",
+      "Bash(ssh root@143.198.141.222 'ls -la ~/.ssh/ && cat ~/.ssh/authorized_keys | wc -l')"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,142 @@
+.checkout-page {
+  min-height: 100vh;
+  background: var(--tg-theme-bg-color, #fff);
+  padding-bottom: 24px;
+}
+
+.checkout-page .header h2 {
+  font-size: 20px;
+  margin: 0;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.checkout-form {
+  padding: 16px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--tg-theme-hint-color, #ddd);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color, #000);
+  box-sizing: border-box;
+}
+
+.form-group input.error {
+  border-color: #ff3b30;
+}
+
+.error-text {
+  display: block;
+  color: #ff3b30;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.delivery-options {
+  display: flex;
+  gap: 12px;
+}
+
+.radio-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--tg-theme-hint-color, #ddd);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+}
+
+.radio-option input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: var(--tg-theme-button-color, #3390ec);
+}
+
+.radio-option:has(input:checked) {
+  border-color: var(--tg-theme-button-color, #3390ec);
+  background: rgba(51, 144, 236, 0.1);
+}
+
+.order-summary {
+  background: var(--tg-theme-hint-color, #f9f9f9);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.order-summary h3 {
+  font-size: 18px;
+  margin: 0 0 12px 0;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color, #666);
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--tg-theme-hint-color, #ddd);
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--tg-theme-text-color, #000);
+}
+
+.summary-total span:last-child {
+  color: var(--tg-theme-button-color, #3390ec);
+  font-size: 20px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--tg-theme-button-color, #3390ec);
+  color: var(--tg-theme-button-text-color, #fff);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-btn:active:not(:disabled) {
+  opacity: 0.8;
+}

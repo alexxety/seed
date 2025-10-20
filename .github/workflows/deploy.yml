@@ -40,14 +40,12 @@ jobs:
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
           # Sync server files
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
-          # Sync admin panel
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          # Sync admin panel and login page
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html public/login.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
-      # Note: Dependencies are already installed on the server
-      # Uncomment below if you need to update dependencies
-      # - name: Install dependencies on server
-      #   run: |
-      #     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
+      - name: Install new dependencies on server
+        run: |
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
 
       - name: Restart server
         run: |

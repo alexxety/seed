@@ -264,26 +264,80 @@
         let sessionStartTime = Date.now();
         const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 час в миллисекундах
 
+        // Проверка авторизации при загрузке страницы
+        async function checkAuth() {
+            const token = localStorage.getItem('adminToken');
+            const tokenExpiry = localStorage.getItem('tokenExpiry');
+
+            if (!token || !tokenExpiry || Date.now() >= parseInt(tokenExpiry)) {
+                // Токен отсутствует или истёк
+                redirectToLogin();
+                return false;
+            }
+
+            // Проверяем токен на сервере
+            try {
+                const response = await fetch('/api/admin/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid token');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                redirectToLogin();
+                return false;
+            }
+        }
+
+        function redirectToLogin() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('tokenExpiry');
+            window.location.href = '/login.html';
+        }
+
         // Функция выхода
-        function logout() {
+        async function logout() {
+            const token = localStorage.getItem('adminToken');
+
+            if (token) {
+                try {
+                    await fetch('/api/admin/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+
             // Очищаем все таймеры
             clearTimeout(inactivityTimer);
             clearInterval(window.statsUpdateInterval);
             clearInterval(window.timerUpdateInterval);
 
-            // Показываем сообщение
-            alert('Вы вышли из админ-панели');
+            // Очищаем токен
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('tokenExpiry');
 
-            // Перенаправляем на главную страницу (это заставит браузер запросить логин заново)
-            window.location.href = '/';
+            // Перенаправляем на страницу логина
+            window.location.href = '/login.html';
         }
 
         // Функция обновления таймера сессии
         function updateSessionTimer() {
-            const elapsed = Date.now() - sessionStartTime;
-            const remaining = INACTIVITY_TIMEOUT - elapsed;
+            const tokenExpiry = parseInt(localStorage.getItem('tokenExpiry'));
+            const remaining = tokenExpiry - Date.now();
 
             if (remaining <= 0) {
+                alert('Сессия истекла. Пожалуйста, войдите снова.');
                 logout();
                 return;
             }
@@ -311,19 +365,25 @@
             document.addEventListener(event, resetInactivityTimer, true);
         });
 
-        // Запускаем таймер при загрузке страницы
-        resetInactivityTimer();
-
-        // Обновляем отображение таймера каждую секунду
-        window.timerUpdateInterval = setInterval(updateSessionTimer, 1000);
-
         async function loadOrders() {
+            const token = localStorage.getItem('adminToken');
+
+            if (!token) {
+                redirectToLogin();
+                return;
+            }
+
             try {
                 const response = await fetch('/api/orders', {
                     headers: {
-                        'Authorization': 'Basic ' + btoa('admin:seed2025')
+                        'Authorization': `Bearer ${token}`
                     }
                 });
+
+                if (response.status === 401 || response.status === 403) {
+                    redirectToLogin();
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error('Ошибка загрузки заказов');
@@ -410,11 +470,22 @@
             displayOrders(filtered);
         });
 
-        // Загружаем заказы при загрузке страницы
-        loadOrders();
+        // Инициализация при загрузке страницы
+        window.addEventListener('DOMContentLoaded', async () => {
+            const isAuthorized = await checkAuth();
 
-        // Автообновление каждые 30 секунд
-        window.statsUpdateInterval = setInterval(loadOrders, 30000);
+            if (isAuthorized) {
+                // Запускаем таймеры
+                resetInactivityTimer();
+                window.timerUpdateInterval = setInterval(updateSessionTimer, 1000);
+
+                // Загружаем заказы
+                loadOrders();
+
+                // Автообновление каждые 30 секунд
+                window.statsUpdateInterval = setInterval(loadOrders, 30000);
+            }
+        });
     </script>
 </body>
 </html>

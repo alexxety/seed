@@ -1,6 +1,9 @@
 const express = require('express');
 const https = require('https');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const rateLimit = require('express-rate-limit');
 const { createOrder, getOrderByNumber, getOrderById, getAllOrders } = require('./database');
 
 const app = express();
@@ -9,8 +12,50 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = '8437447234:AAFTwhCAl7kgRPy8NVmxGBdhiZCWTypPxZY';
 const CHAT_ID = '-4869379501';
 
+// JWT Secret - в продакшене должен быть в переменных окружения
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production-2025';
+
+// Admin credentials (в продакшене лучше хранить в БД с bcrypt)
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD_HASH = bcrypt.hashSync('seed2025', 10);
+
+// Rate limiting для защиты от брутфорса
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 5, // максимум 5 попыток
+  message: 'Слишком много попыток входа. Попробуйте позже.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting для API
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 минута
+  max: 100, // максимум 100 запросов
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(express.json());
 app.use(express.static('dist'));
+
+// Middleware для проверки JWT токена
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Токен не предоставлен' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Недействительный или истёкший токен' });
+    }
+    req.user = user;
+    next();
+  });
+}
 
 function sendTelegramMessage(message) {
   return new Promise((resolve, reject) => {
@@ -55,7 +100,56 @@ function sendTelegramMessage(message) {
   });
 }
 
-app.post('/api/send-order', async (req, res) => {
+// API endpoint для логина админа
+app.post('/api/admin/login', loginLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Требуется логин и пароль' });
+    }
+
+    // Проверяем учетные данные
+    if (username !== ADMIN_USERNAME) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    // Создаем JWT токен с истечением через 1 час
+    const token = jwt.sign(
+      { username, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      expiresIn: 3600 // 1 час в секундах
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Ошибка авторизации' });
+  }
+});
+
+// API endpoint для проверки токена
+app.get('/api/admin/verify', authenticateToken, (req, res) => {
+  res.json({ success: true, user: req.user });
+});
+
+// API endpoint для логаута (очистка токена на клиенте)
+app.post('/api/admin/logout', authenticateToken, (req, res) => {
+  // В JWT нельзя явно инвалидировать токен на сервере без blacklist,
+  // но клиент удалит токен из localStorage
+  res.json({ success: true, message: 'Выход выполнен успешно' });
+});
+
+app.post('/api/send-order', apiLimiter, async (req, res) => {
   try {
     const { customer, items, total } = req.body;
 
@@ -130,18 +224,9 @@ app.get('/api/order/:orderNumber', (req, res) => {
   }
 });
 
-// API endpoint для получения всех заказов (с базовой аутентификацией)
-app.get('/api/orders', (req, res) => {
+// API endpoint для получения всех заказов (с JWT аутентификацией)
+app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
   try {
-    // Базовая аутентификация
-    const authHeader = req.headers.authorization;
-    const expectedAuth = 'Basic ' + Buffer.from('admin:seed2025').toString('base64');
-
-    if (!authHeader || authHeader !== expectedAuth) {
-      res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
     const limit = parseInt(req.query.limit) || 100;
     const orders = getAllOrders(limit);
 

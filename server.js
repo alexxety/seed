@@ -91,10 +91,10 @@ ${itemsList}
   }
 });
 
-// Все остальные запросы отдаем index.html (для SPA)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
+// Статические файлы обслуживаются nginx, поэтому этот роут не нужен
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

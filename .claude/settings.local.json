@@ -13,7 +13,20 @@
       "Bash(git add .github/workflows/deploy.yml)",
       "Bash(git commit -m \"Use rsync instead of scp-action for deployment\")",
       "Bash(cat ~/.ssh/github_deploy.pub)",
-      "Bash(ssh root@143.198.141.222 'ls -la ~/.ssh/ && cat ~/.ssh/authorized_keys | wc -l')"
+      "Bash(ssh root@143.198.141.222 'ls -la ~/.ssh/ && cat ~/.ssh/authorized_keys | wc -l')",
+      "Bash(ssh root@143.198.141.222 'cd /var/www/telegram-shop && npm install --omit=dev 2>&1')",
+      "Bash(ssh root@143.198.141.222 'cd /var/www/telegram-shop && npm install express 2>&1 | tail -5')",
+      "Bash(ssh root@143.198.141.222 'ls -la /var/www/telegram-shop/node_modules/ | head -10')",
+      "Bash(ssh root@143.198.141.222 'cp -r /var/www/shop/node_modules /var/www/telegram-shop/ && pm2 restart telegram-shop')",
+      "Bash(scp server.js root@143.198.141.222:/var/www/telegram-shop/)",
+      "Bash(ssh root@143.198.141.222 'pm2 restart telegram-shop')",
+      "Bash(ssh root@143.198.141.222 'pm2 list')",
+      "Bash(ssh root@143.198.141.222 'pm2 logs telegram-shop --lines 5 --nostream')",
+      "Bash(ssh root@143.198.141.222 'cat /var/www/telegram-shop/server.js')",
+      "Bash(ssh root@143.198.141.222 'pm2 logs telegram-shop --lines 20 --nostream')",
+      "Bash(ssh root@143.198.141.222 'pm2 logs telegram-shop --lines 50 --nostream')",
+      "Bash(git add server.js)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

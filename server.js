@@ -19,9 +19,6 @@ function sendTelegramMessage(message) {
       parse_mode: 'HTML'
     });
 
-    console.log('Data to send:', data.substring(0, 200));
-    console.log('Data length:', data.length);
-
     const options = {
       hostname: 'api.telegram.org',
       path: `/bot${BOT_TOKEN}/sendMessage`,
@@ -85,8 +82,6 @@ ${itemsList}
 
 💰 <b>Итого:</b> ${total.toLocaleString('ru-RU')} ₽`;
 
-    console.log('Sending message:', message);
-    console.log('Message length:', message.length);
     await sendTelegramMessage(message);
 
     res.json({ success: true, message: 'Order sent successfully' });

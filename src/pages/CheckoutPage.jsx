@@ -80,9 +80,15 @@ export default function CheckoutPage({ cart, total, onBack }) {
 
       // Показать успешное сообщение
       const tg = window.Telegram?.WebApp;
-      if (tg) {
-        tg.showAlert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
-        tg.close();
+      if (tg && typeof tg.showAlert === 'function') {
+        try {
+          tg.showAlert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
+          tg.close();
+        } catch (e) {
+          // Если showAlert не поддерживается, используем обычный alert
+          alert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
+          window.location.href = '/';
+        }
       } else {
         alert('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.');
         window.location.href = '/';

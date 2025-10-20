@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = '8437447234:AAFTwhCAl7kgRPy8NVmxGBdhiZCWTypPxZY';
-const CHAT_ID = '-1004869379501';
+const CHAT_ID = '-4869379501';
 
 app.use(express.json());
 app.use(express.static('dist'));

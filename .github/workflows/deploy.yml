@@ -29,16 +29,21 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DROPLET_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "echo 'SSH connection successful'"
 
       - name: Deploy to Droplet
         run: |
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" --delete --exclude='node_modules' dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
-      - name: Install dependencies on server
-        run: |
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
+      # Note: Dependencies are already installed on the server
+      # Uncomment below if you need to update dependencies
+      # - name: Install dependencies on server
+      #   run: |
+      #     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
 
       - name: Restart server
         run: |

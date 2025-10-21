@@ -13,20 +13,28 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  total: 0,
+  itemsCount: 0,
 
   addItem: (product, quantity = 1) => {
     set((state) => {
       const existing = state.items.find((i) => i.id === product.id)
+      let newItems
       if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.id === product.id
-              ? { ...i, quantity: i.quantity + quantity }
-              : i
-          ),
-        }
+        newItems = state.items.map((i) =>
+          i.id === product.id
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
+        )
+      } else {
+        newItems = [...state.items, { ...product, quantity }]
       }
-      return { items: [...state.items, { ...product, quantity }] }
+
+      return {
+        items: newItems,
+        total: newItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        itemsCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+      }
     })
   },
 
@@ -35,29 +43,28 @@ export const useCartStore = create<CartStore>((set, get) => ({
       get().removeItem(id)
       return
     }
-    set((state) => ({
-      items: state.items.map((i) =>
+    set((state) => {
+      const newItems = state.items.map((i) =>
         i.id === id ? { ...i, quantity } : i
-      ),
-    }))
+      )
+      return {
+        items: newItems,
+        total: newItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        itemsCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+      }
+    })
   },
 
   removeItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((i) => i.id !== id),
-    }))
+    set((state) => {
+      const newItems = state.items.filter((i) => i.id !== id)
+      return {
+        items: newItems,
+        total: newItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        itemsCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+      }
+    })
   },
 
-  clearCart: () => set({ items: [] }),
-
-  get total() {
-    return get().items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    )
-  },
-
-  get itemsCount() {
-    return get().items.reduce((sum, item) => sum + item.quantity, 0)
-  },
+  clearCart: () => set({ items: [], total: 0, itemsCount: 0 }),
 }))

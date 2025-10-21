@@ -41,7 +41,7 @@ jobs:
           # Sync server files
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
           # Sync admin panel pages
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html public/login.html public/products.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html public/login.html public/products.html public/categories.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
       - name: Install new dependencies on server
         run: |

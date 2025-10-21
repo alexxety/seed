@@ -69,8 +69,18 @@ export default function CheckoutPage({ cart, total, onBack, onOrderSuccess }) {
 
     setIsSubmitting(true);
 
+    // Получаем данные пользователя Telegram
+    const tg = window.Telegram?.WebApp;
+    const telegramUser = tg?.initDataUnsafe?.user || {};
+
     const orderData = {
-      customer: formData,
+      customer: {
+        ...formData,
+        telegramUsername: telegramUser.username || null,
+        telegramId: telegramUser.id || null,
+        telegramFirstName: telegramUser.first_name || null,
+        telegramLastName: telegramUser.last_name || null
+      },
       items: cart,
       total
     };

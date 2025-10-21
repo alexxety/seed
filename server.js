@@ -171,10 +171,22 @@ app.post('/api/send-order', apiLimiter, async (req, res) => {
     const deliveryLabel = customer.deliveryType === 'address' ? '📍 По адресу' : '📦 СДЕК ПВЗ';
     const deliveryDetailsLabel = customer.deliveryType === 'address' ? 'Адрес' : 'Номер ПВЗ';
 
+    // Формируем информацию о Telegram пользователе
+    let telegramInfo = '';
+    if (customer.telegramUsername) {
+      telegramInfo = `\n💬 <b>Telegram:</b> @${customer.telegramUsername}`;
+    } else if (customer.telegramFirstName || customer.telegramLastName) {
+      const tgName = [customer.telegramFirstName, customer.telegramLastName].filter(Boolean).join(' ');
+      telegramInfo = `\n💬 <b>Telegram:</b> ${tgName}`;
+    }
+    if (customer.telegramId) {
+      telegramInfo += ` (ID: ${customer.telegramId})`;
+    }
+
     const message = `🛒 <b>НОВЫЙ ЗАКАЗ #${order.orderNumber}</b>
 
 👤 <b>ФИО:</b> ${customer.fullName}
-📱 <b>Телефон:</b> ${customer.phone}
+📱 <b>Телефон:</b> ${customer.phone}${telegramInfo}
 🚚 <b>Доставка:</b> ${deliveryLabel}
 <b>${deliveryDetailsLabel}:</b> ${customer.deliveryDetails}
 

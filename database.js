@@ -15,6 +15,10 @@ db.exec(`
     delivery_details TEXT NOT NULL,
     items TEXT NOT NULL,
     total INTEGER NOT NULL,
+    telegram_username TEXT,
+    telegram_id INTEGER,
+    telegram_first_name TEXT,
+    telegram_last_name TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'new'
   )
@@ -43,8 +47,11 @@ function createOrder(customer, items, total) {
   const orderNumber = generateOrderNumber();
 
   const stmt = db.prepare(`
-    INSERT INTO orders (order_number, full_name, phone, delivery_type, delivery_details, items, total)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (
+      order_number, full_name, phone, delivery_type, delivery_details, items, total,
+      telegram_username, telegram_id, telegram_first_name, telegram_last_name
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
@@ -54,7 +61,11 @@ function createOrder(customer, items, total) {
     customer.deliveryType,
     customer.deliveryDetails,
     JSON.stringify(items),
-    total
+    total,
+    customer.telegramUsername || null,
+    customer.telegramId || null,
+    customer.telegramFirstName || null,
+    customer.telegramLastName || null
   );
 
   return {

@@ -39,9 +39,9 @@ jobs:
           # Sync dist files (HTML, CSS, JS assets) without deleting anything
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/ ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
           # Sync server files
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
-          # Sync admin panel and login page
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html public/login.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
+          # Sync admin panel pages
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" public/admin.html public/login.html public/products.html ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }}:/var/www/telegram-shop/
 
       - name: Install new dependencies on server
         run: |

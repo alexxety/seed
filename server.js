@@ -4,7 +4,11 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
-const { createOrder, getOrderByNumber, getOrderById, getAllOrders } = require('./database');
+const {
+  createOrder, getOrderByNumber, getOrderById, getAllOrders,
+  getAllCategories, createCategory, updateCategory, deleteCategory,
+  getAllProducts, getProductById, createProduct, updateProduct, deleteProduct
+} = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -268,6 +272,119 @@ app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders', details: error.message });
+  }
+});
+
+// ==================== API ДЛЯ КАТЕГОРИЙ ====================
+
+// Получить все категории (публичный endpoint)
+app.get('/api/categories', (req, res) => {
+  try {
+    const categories = getAllCategories();
+    res.json({ success: true, categories });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+// Создать категорию (только для админа)
+app.post('/api/admin/categories', authenticateToken, (req, res) => {
+  try {
+    const { name, icon } = req.body;
+    const category = createCategory(name, icon);
+    res.json({ success: true, category });
+  } catch (error) {
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
+});
+
+// Обновить категорию (только для админа)
+app.put('/api/admin/categories/:id', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, icon } = req.body;
+    const category = updateCategory(parseInt(id), name, icon);
+    res.json({ success: true, category });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+// Удалить категорию (только для админа)
+app.delete('/api/admin/categories/:id', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    deleteCategory(parseInt(id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// ==================== API ДЛЯ ТОВАРОВ ====================
+
+// Получить все товары (публичный endpoint)
+app.get('/api/products', (req, res) => {
+  try {
+    const products = getAllProducts();
+    res.json({ success: true, products });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Получить товар по ID (публичный endpoint)
+app.get('/api/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = getProductById(parseInt(id));
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// Создать товар (только для админа)
+app.post('/api/admin/products', authenticateToken, (req, res) => {
+  try {
+    const product = createProduct(req.body);
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
+// Обновить товар (только для админа)
+app.put('/api/admin/products/:id', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = updateProduct(parseInt(id), req.body);
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+// Удалить товар (только для админа)
+app.delete('/api/admin/products/:id', authenticateToken, (req, res) => {
+  try {
+    const { id } = req.params;
+    deleteProduct(parseInt(id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 

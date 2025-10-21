@@ -124,14 +124,15 @@ function sendTelegramMessage(message, chatId = CHAT_ID) {
 // API endpoint для логина админа
 app.post('/api/admin/login', loginLimiter, async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, username, password } = req.body;
+    const login = email || username;
 
-    if (!username || !password) {
+    if (!login || !password) {
       return res.status(400).json({ error: 'Требуется логин и пароль' });
     }
 
     // Проверяем учетные данные
-    if (username !== ADMIN_USERNAME) {
+    if (login !== ADMIN_USERNAME) {
       return res.status(401).json({ error: 'Неверный логин или пароль' });
     }
 

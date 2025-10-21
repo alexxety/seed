@@ -36,6 +36,9 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Trust proxy - nginx проксирует запросы
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.static('dist'));
 

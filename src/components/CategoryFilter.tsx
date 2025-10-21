@@ -13,11 +13,11 @@ export function CategoryFilter({
   onSelectCategory,
 }: CategoryFilterProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-custom">
       <button
         onClick={() => onSelectCategory(null)}
         className={cn(
-          'px-4 py-2 rounded-full whitespace-nowrap transition-colors',
+          'px-4 py-2 rounded-full whitespace-nowrap transition-colors flex-shrink-0',
           selectedCategory === null
             ? 'bg-tg-button text-tg-button-text'
             : 'bg-gray-200 text-gray-700'
@@ -30,7 +30,7 @@ export function CategoryFilter({
           key={category.id}
           onClick={() => onSelectCategory(category.id)}
           className={cn(
-            'px-4 py-2 rounded-full whitespace-nowrap transition-colors',
+            'px-4 py-2 rounded-full whitespace-nowrap transition-colors flex-shrink-0',
             selectedCategory === category.id
               ? 'bg-tg-button text-tg-button-text'
               : 'bg-gray-200 text-gray-700'

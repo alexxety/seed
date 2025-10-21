@@ -10,3 +10,30 @@
   --tg-theme-button-color: #3390ec;
   --tg-theme-button-text-color: #ffffff;
 }
+
+/* Кастомный стиль скроллбара для категорий */
+@layer utilities {
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .scrollbar-custom::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Firefox */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+}

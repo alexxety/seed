@@ -22,7 +22,16 @@ export default function ProductPage({ product, onBack, onAddToCart, cartCount, o
       </header>
 
       <div className="product-details">
-        <div className="product-image-large">{product.image}</div>
+        <div className="product-image-large">
+          <img
+            src={product.image}
+            alt={product.name}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = '🌱';
+            }}
+          />
+        </div>
 
         <h1 className="product-title">{product.name}</h1>
         <p className="product-price-large">{product.price} ₽</p>

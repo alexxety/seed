@@ -49,7 +49,16 @@ export default function ProductList({
             className="product-card"
             onClick={() => onProductClick(product)}
           >
-            <div className="product-image">{product.image}</div>
+            <div className="product-image">
+              <img
+                src={product.image}
+                alt={product.name}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '🌱';
+                }}
+              />
+            </div>
             <h3 className="product-name">{product.name}</h3>
             <p className="product-price">{product.price} ₽</p>
             <button className="view-button">Подробнее →</button>

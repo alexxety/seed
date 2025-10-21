@@ -8,13 +8,10 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
-
 import { Route as rootRouteImport } from './app/routes/__root'
 import { Route as CheckoutRouteImport } from './app/routes/checkout'
 import { Route as CartRouteImport } from './app/routes/cart'
 import { Route as IndexRouteImport } from './app/routes/index'
-import { Route as AdminIndexRouteImport } from './app/routes/admin/index'
 import { Route as SuccessOrderNumberRouteImport } from './app/routes/success.$orderNumber'
 import { Route as ProductIdRouteImport } from './app/routes/product.$id'
 import { Route as AdminLoginRouteImport } from './app/routes/admin/login'
@@ -23,13 +20,6 @@ import { Route as AdminAdminProductsRouteImport } from './app/routes/admin/_admi
 import { Route as AdminAdminOrdersRouteImport } from './app/routes/admin/_admin/orders'
 import { Route as AdminAdminCategoriesRouteImport } from './app/routes/admin/_admin/categories'
 
-const AdminRouteImport = createFileRoute('/admin')()
-
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
@@ -44,11 +34,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
 } as any)
 const SuccessOrderNumberRoute = SuccessOrderNumberRouteImport.update({
   id: '/success/$orderNumber',
@@ -93,7 +78,6 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
-  '/admin/': typeof AdminIndexRoute
   '/admin/categories': typeof AdminAdminCategoriesRoute
   '/admin/orders': typeof AdminAdminOrdersRoute
   '/admin/products': typeof AdminAdminProductsRoute
@@ -102,7 +86,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
-  '/admin': typeof AdminIndexRoute
+  '/admin': typeof AdminAdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
@@ -115,12 +99,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
-  '/admin': typeof AdminRouteWithChildren
   '/admin/_admin': typeof AdminAdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
-  '/admin/': typeof AdminIndexRoute
   '/admin/_admin/categories': typeof AdminAdminCategoriesRoute
   '/admin/_admin/orders': typeof AdminAdminOrdersRoute
   '/admin/_admin/products': typeof AdminAdminProductsRoute
@@ -135,7 +117,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/product/$id'
     | '/success/$orderNumber'
-    | '/admin/'
     | '/admin/categories'
     | '/admin/orders'
     | '/admin/products'
@@ -156,12 +137,10 @@ export interface FileRouteTypes {
     | '/'
     | '/cart'
     | '/checkout'
-    | '/admin'
     | '/admin/_admin'
     | '/admin/login'
     | '/product/$id'
     | '/success/$orderNumber'
-    | '/admin/'
     | '/admin/_admin/categories'
     | '/admin/_admin/orders'
     | '/admin/_admin/products'
@@ -171,20 +150,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
-  AdminRoute: typeof AdminRouteWithChildren
   ProductIdRoute: typeof ProductIdRoute
   SuccessOrderNumberRoute: typeof SuccessOrderNumberRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
@@ -205,13 +176,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
     }
     '/success/$orderNumber': {
       id: '/success/$orderNumber'
@@ -236,7 +200,7 @@ declare module '@tanstack/react-router' {
     }
     '/admin/_admin': {
       id: '/admin/_admin'
-      path: '/admin'
+      path: ''
       fullPath: '/admin'
       preLoaderRoute: typeof AdminAdminRouteImport
       parentRoute: typeof AdminRoute
@@ -265,41 +229,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminAdminRouteChildren {
-  AdminAdminCategoriesRoute: typeof AdminAdminCategoriesRoute
-  AdminAdminOrdersRoute: typeof AdminAdminOrdersRoute
-  AdminAdminProductsRoute: typeof AdminAdminProductsRoute
-}
-
-const AdminAdminRouteChildren: AdminAdminRouteChildren = {
-  AdminAdminCategoriesRoute: AdminAdminCategoriesRoute,
-  AdminAdminOrdersRoute: AdminAdminOrdersRoute,
-  AdminAdminProductsRoute: AdminAdminProductsRoute,
-}
-
-const AdminAdminRouteWithChildren = AdminAdminRoute._addFileChildren(
-  AdminAdminRouteChildren,
-)
-
-interface AdminRouteChildren {
-  AdminAdminRoute: typeof AdminAdminRouteWithChildren
-  AdminLoginRoute: typeof AdminLoginRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminAdminRoute: AdminAdminRouteWithChildren,
-  AdminLoginRoute: AdminLoginRoute,
-  AdminIndexRoute: AdminIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
-  AdminRoute: AdminRouteWithChildren,
   ProductIdRoute: ProductIdRoute,
   SuccessOrderNumberRoute: SuccessOrderNumberRoute,
 }

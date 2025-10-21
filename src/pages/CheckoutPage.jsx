@@ -184,8 +184,21 @@ export default function CheckoutPage({ cart, total, onBack, onOrderSuccess }) {
           <h3>Ваш заказ</h3>
           {cart.map(item => (
             <div key={item.id} className="summary-item">
-              <span>{item.name} × {item.quantity}</span>
-              <span>{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
+              <div className="summary-item-image">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '🌱';
+                  }}
+                />
+              </div>
+              <div className="summary-item-info">
+                <span className="summary-item-name">{item.name}</span>
+                <span className="summary-item-quantity">{item.quantity} шт. × {item.price} ₽</span>
+              </div>
+              <span className="summary-item-total">{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
             </div>
           ))}
           <div className="summary-total">
@@ -193,7 +206,6 @@ export default function CheckoutPage({ cart, total, onBack, onOrderSuccess }) {
             <span>{total.toLocaleString('ru-RU')} ₽</span>
           </div>
         </div>
-
         <button
           type="submit"
           className="submit-btn"

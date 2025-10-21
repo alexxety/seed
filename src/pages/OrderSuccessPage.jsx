@@ -21,7 +21,12 @@ export default function OrderSuccessPage({ orderNumber, onBackToHome }) {
       }
 
       const data = await response.json();
-      setOrderDetails(data.order);
+      // Парсим items если они пришли как строка
+      const order = data.order;
+      if (typeof order.items === 'string') {
+        order.items = JSON.parse(order.items);
+      }
+      setOrderDetails(order);
     } catch (err) {
       console.error('Error fetching order:', err);
       setError(err.message);

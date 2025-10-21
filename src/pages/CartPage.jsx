@@ -33,7 +33,16 @@ export default function CartPage({ cart, onBack, onUpdateQuantity, onRemove, onC
       <div className="cart-items">
         {cart.map(item => (
           <div key={item.id} className="cart-item">
-            <div className="item-image">{item.image}</div>
+            <div className="item-image">
+              <img
+                src={item.image}
+                alt={item.name}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '🌱';
+                }}
+              />
+            </div>
             <div className="item-details">
               <h3>{item.name}</h3>
               <p className="item-price">{item.price} ₽</p>

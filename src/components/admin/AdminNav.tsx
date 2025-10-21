@@ -15,7 +15,7 @@ export function AdminNav() {
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex gap-4">
           <Link
-            to="/admin"
+            to="/admin/orders"
             className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
             activeProps={{ className: 'bg-tg-button text-white' }}
           >

@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import type { OrderStatus } from '@/types'
 
-export const Route = createFileRoute('/admin/_admin/')({
+export const Route = createFileRoute('/admin/_admin/orders')({
   component: AdminOrdersPage,
 })
 

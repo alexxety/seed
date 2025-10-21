@@ -33,7 +33,7 @@ function AdminLoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await loginMutation.mutateAsync(data)
-      navigate({ to: '/admin' })
+      navigate({ to: '/admin/orders' })
     } catch (error) {
       console.error('Login failed:', error)
     }

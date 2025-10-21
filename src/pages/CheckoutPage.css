@@ -139,7 +139,8 @@
 
 .summary-item-quantity {
   font-size: 12px;
-  color: var(--tg-theme-hint-color, #666);
+  color: var(--tg-theme-text-color, #333);
+  opacity: 0.7;
 }
 
 .summary-item-total {

@@ -257,6 +257,10 @@ app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
         deliveryDetails: order.delivery_details,
         items: order.items,
         total: order.total,
+        telegramUsername: order.telegram_username,
+        telegramId: order.telegram_id,
+        telegramFirstName: order.telegram_first_name,
+        telegramLastName: order.telegram_last_name,
         createdAt: order.created_at,
         status: order.status
       }))

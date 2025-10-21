@@ -246,6 +246,7 @@
                         <th>Дата</th>
                         <th>Клиент</th>
                         <th>Телефон</th>
+                        <th>Telegram</th>
                         <th>Доставка</th>
                         <th>Товары</th>
                         <th>Сумма</th>
@@ -409,7 +410,7 @@
             tbody.innerHTML = '';
 
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">Заказов не найдено</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">Заказов не найдено</td></tr>';
                 return;
             }
 
@@ -429,11 +430,24 @@
                     `${item.name} x${item.quantity}`
                 ).join('<br>');
 
+                // Формируем информацию о Telegram
+                let telegramInfo = '-';
+                if (order.telegramUsername) {
+                    telegramInfo = `@${order.telegramUsername}`;
+                } else if (order.telegramFirstName || order.telegramLastName) {
+                    const tgName = [order.telegramFirstName, order.telegramLastName].filter(Boolean).join(' ');
+                    telegramInfo = tgName;
+                }
+                if (order.telegramId && telegramInfo !== '-') {
+                    telegramInfo += `<br><small>ID: ${order.telegramId}</small>`;
+                }
+
                 row.innerHTML = `
                     <td><span class="order-number">${order.orderNumber}</span></td>
                     <td>${date}</td>
                     <td>${order.fullName}</td>
                     <td class="phone">${order.phone}</td>
+                    <td style="font-size: 13px;">${telegramInfo}</td>
                     <td>
                         <span class="delivery-badge">${deliveryType}</span><br>
                         <small>${order.deliveryDetails}</small>
@@ -461,10 +475,17 @@
             const searchTerm = e.target.value.toLowerCase();
 
             const filtered = allOrders.filter(order => {
+                const username = order.telegramUsername ? order.telegramUsername.toLowerCase() : '';
+                const firstName = order.telegramFirstName ? order.telegramFirstName.toLowerCase() : '';
+                const lastName = order.telegramLastName ? order.telegramLastName.toLowerCase() : '';
+
                 return order.orderNumber.toLowerCase().includes(searchTerm) ||
                        order.fullName.toLowerCase().includes(searchTerm) ||
                        order.phone.includes(searchTerm) ||
-                       order.deliveryDetails.toLowerCase().includes(searchTerm);
+                       order.deliveryDetails.toLowerCase().includes(searchTerm) ||
+                       username.includes(searchTerm) ||
+                       firstName.includes(searchTerm) ||
+                       lastName.includes(searchTerm);
             });
 
             displayOrders(filtered);

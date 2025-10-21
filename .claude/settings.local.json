@@ -47,7 +47,8 @@
       "Bash(cat:*)",
       "Bash(git fetch:*)",
       "Bash(git checkout:*)",
-      "Bash(npx tailwindcss:*)"
+      "Bash(npx tailwindcss:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

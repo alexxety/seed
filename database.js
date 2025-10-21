@@ -26,14 +26,13 @@ function generateOrderNumber() {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-
-  // Получаем количество заказов за сегодня
   const todayPrefix = `${year}${month}${day}`;
-  const todayOrders = db.prepare(
-    'SELECT COUNT(*) as count FROM orders WHERE order_number LIKE ?'
-  ).get(`${todayPrefix}-%`);
 
-  const orderCount = todayOrders.count + 1;
+  // Получаем общее количество ВСЕХ заказов (сквозная нумерация)
+  const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get();
+  const orderCount = totalOrders.count + 1;
+
+  // Формат: YYYYMMDD-NNNN где NNNN - сквозной номер по всем заказам
   const orderNumber = `${todayPrefix}-${String(orderCount).padStart(4, '0')}`;
 
   return orderNumber;

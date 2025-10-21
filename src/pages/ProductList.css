@@ -42,10 +42,11 @@
 
 .category-filter {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 16px;
-  overflow-x: auto;
   border-bottom: 1px solid var(--tg-theme-hint-color, #eee);
+  max-height: none;
 }
 
 .category-filter button {
@@ -57,6 +58,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .category-filter button.active {

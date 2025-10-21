@@ -78,10 +78,10 @@ function authenticateToken(req, res, next) {
   });
 }
 
-function sendTelegramMessage(message) {
+function sendTelegramMessage(message, chatId = CHAT_ID) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
-      chat_id: CHAT_ID,
+      chat_id: chatId,
       text: message,
       parse_mode: 'HTML'
     });
@@ -201,7 +201,8 @@ app.post('/api/send-order', apiLimiter, async (req, res) => {
       telegramInfo += ` (ID: ${customer.telegramId})`;
     }
 
-    const message = `🛒 <b>НОВЫЙ ЗАКАЗ #${order.orderNumber}</b>
+    // Сообщение для админа в канал
+    const adminMessage = `🛒 <b>НОВЫЙ ЗАКАЗ #${order.orderNumber}</b>
 
 👤 <b>ФИО:</b> ${customer.fullName}
 📱 <b>Телефон:</b> ${customer.phone}${telegramInfo}
@@ -213,7 +214,33 @@ ${itemsList}
 
 💰 <b>Итого:</b> ${total.toLocaleString('ru-RU')} ₽`;
 
-    await sendTelegramMessage(message);
+    // Сообщение для клиента в личку
+    const customerMessage = `✅ <b>Ваш заказ принят!</b>
+
+🔢 <b>Номер заказа:</b> #${order.orderNumber}
+
+📦 <b>Товары:</b>
+${itemsList}
+
+💰 <b>Итого:</b> ${total.toLocaleString('ru-RU')} ₽
+
+🚚 <b>Доставка:</b> ${deliveryLabel}
+<b>${deliveryDetailsLabel}:</b> ${customer.deliveryDetails}
+
+Спасибо за заказ! Мы свяжемся с вами в ближайшее время.`;
+
+    // Отправляем уведомление админу в канал
+    await sendTelegramMessage(adminMessage, CHAT_ID);
+
+    // Отправляем уведомление клиенту в личные сообщения (если есть telegramId)
+    if (customer.telegramId) {
+      try {
+        await sendTelegramMessage(customerMessage, customer.telegramId);
+      } catch (error) {
+        console.error('Failed to send message to customer:', error);
+        // Не прерываем выполнение, даже если не удалось отправить клиенту
+      }
+    }
 
     res.json({
       success: true,

@@ -35,7 +35,19 @@
       "Bash(nslookup:*)",
       "Bash(git add:*)",
       "Bash(npm install)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build)",
+      "Read(//Users/raketa23/**)",
+      "Bash(ping:*)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@46.224.19.173 'echo \"\"Connected successfully!\"\" && uname -a')",
+      "Bash(ssh:*)",
+      "Bash(rsync:*)",
+      "Bash(scp:*)",
+      "Bash(cat:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tailwindcss:*)"
     ],
     "deny": [],
     "ask": []

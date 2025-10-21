@@ -1,7 +1,8 @@
 const https = require('https');
 
-const BOT_TOKEN = '8437447234:AAFTwhCAl7kgRPy8NVmxGBdhiZCWTypPxZY';
-const CHAT_ID = '-1004869379501';
+// Telegram credentials - MUST be set via environment variables
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 function sendTelegramMessage(message) {
   return new Promise((resolve, reject) => {

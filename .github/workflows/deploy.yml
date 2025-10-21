@@ -47,6 +47,16 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
 
+      - name: Set environment variables on server
+        run: |
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
+          PORT=3000
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ENV_EOF
+          "
+
       - name: Restart server
         run: |
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "cd /var/www/telegram-shop && pm2 reload telegram-shop || pm2 start server.js --name telegram-shop"

@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 const express = require('express');
 const https = require('https');
 const path = require('path');
@@ -13,11 +16,22 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const BOT_TOKEN = '8437447234:AAFTwhCAl7kgRPy8NVmxGBdhiZCWTypPxZY';
-const CHAT_ID = '-4869379501';
+// Telegram credentials - MUST be set via environment variables
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// JWT Secret - в продакшене должен быть в переменных окружения
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production-2025';
+if (!BOT_TOKEN || !CHAT_ID) {
+  console.error('ERROR: TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in environment variables');
+  process.exit(1);
+}
+
+// JWT Secret - MUST be set via environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('ERROR: JWT_SECRET must be set in environment variables');
+  process.exit(1);
+}
 
 // Admin credentials (в продакшене лучше хранить в БД с bcrypt)
 const ADMIN_USERNAME = 'admin';

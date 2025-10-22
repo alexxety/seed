@@ -24,7 +24,7 @@ export function useAdminOrders() {
   return useQuery({
     queryKey: ['admin', 'orders'],
     queryFn: async () => {
-      const data = await apiClient<OrdersResponse>('/api/admin/orders', {
+      const data = await apiClient<OrdersResponse>('/api/orders', {
         headers: getAuthHeaders(),
       })
       return data.orders
@@ -37,7 +37,7 @@ export function useAdminOrder(id: number) {
   return useQuery({
     queryKey: ['admin', 'orders', id],
     queryFn: async () => {
-      const data = await apiClient<OrderDetailsResponse>(`/api/admin/orders/${id}`, {
+      const data = await apiClient<OrderDetailsResponse>(`/api/orders/${id}`, {
         headers: getAuthHeaders(),
       })
       return data.order
@@ -52,7 +52,7 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: UpdateOrderStatusRequest['status'] }) => {
       const data = await apiClient<{ success: boolean; order: Order }>(
-        `/api/admin/orders/${id}`,
+        `/api/orders/${id}`,
         {
           method: 'PATCH',
           headers: getAuthHeaders(),
@@ -68,6 +68,31 @@ export function useUpdateOrderStatus() {
       )
       // Обновляем кэш конкретного заказа
       queryClient.setQueryData(['admin', 'orders', updatedOrder.id], updatedOrder)
+    },
+  })
+}
+
+export function useDeleteOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient<{ success: boolean; message: string }>(
+        `/api/orders/${id}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        }
+      )
+      return id
+    },
+    onSuccess: (deletedId) => {
+      // Удаляем заказ из кэша списка заказов
+      queryClient.setQueryData<Order[]>(['admin', 'orders'], (old) =>
+        old?.filter((order) => order.id !== deletedId)
+      )
+      // Удаляем кэш конкретного заказа
+      queryClient.removeQueries({ queryKey: ['admin', 'orders', deletedId] })
     },
   })
 }

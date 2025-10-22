@@ -50,6 +50,31 @@ db.exec(`
   )
 `);
 
+// Создаем таблицу для счетчика заказов
+db.exec(`
+  CREATE TABLE IF NOT EXISTS order_counter (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    counter INTEGER NOT NULL DEFAULT 0
+  )
+`);
+
+// Инициализируем счетчик если его нет
+const counterExists = db.prepare('SELECT counter FROM order_counter WHERE id = 1').get();
+if (!counterExists) {
+  // Находим максимальный номер среди существующих заказов
+  const allOrders = db.prepare('SELECT order_number FROM orders').all();
+  let maxNumber = 0;
+  if (allOrders && allOrders.length > 0) {
+    for (const order of allOrders) {
+      const orderNum = parseInt(order.order_number.split('-')[1]);
+      if (orderNum > maxNumber) {
+        maxNumber = orderNum;
+      }
+    }
+  }
+  db.prepare('INSERT INTO order_counter (id, counter) VALUES (1, ?)').run(maxNumber);
+}
+
 // Функция для создания номера заказа
 function generateOrderNumber() {
   const date = new Date();
@@ -58,9 +83,12 @@ function generateOrderNumber() {
   const day = String(date.getDate()).padStart(2, '0');
   const todayPrefix = `${year}${month}${day}`;
 
-  // Получаем общее количество ВСЕХ заказов (сквозная нумерация)
-  const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get();
-  const orderCount = totalOrders.count + 1;
+  // Получаем текущий счетчик и увеличиваем его
+  const updateStmt = db.prepare('UPDATE order_counter SET counter = counter + 1 WHERE id = 1');
+  updateStmt.run();
+
+  const counterRow = db.prepare('SELECT counter FROM order_counter WHERE id = 1').get();
+  const orderCount = counterRow.counter;
 
   // Формат: YYYYMMDD-NNNN где NNNN - сквозной номер по всем заказам
   const orderNumber = `${todayPrefix}-${String(orderCount).padStart(4, '0')}`;
@@ -155,6 +183,14 @@ function updateCategory(id, name, icon) {
 }
 
 function deleteCategory(id) {
+  // Проверяем, есть ли товары в этой категории
+  const checkStmt = db.prepare('SELECT COUNT(*) as count FROM products WHERE category_id = ? AND is_active = 1');
+  const result = checkStmt.get(id);
+
+  if (result.count > 0) {
+    throw new Error(`Cannot delete category with ${result.count} products. Please move or delete products first.`);
+  }
+
   const stmt = db.prepare('DELETE FROM categories WHERE id = ?');
   stmt.run(id);
 }
@@ -169,7 +205,12 @@ function getAllProducts() {
     WHERE p.is_active = 1
     ORDER BY p.id
   `);
-  return stmt.all();
+  const products = stmt.all();
+  // Переименовываем category_id в category для совместимости с фронтендом
+  return products.map(p => ({
+    ...p,
+    category: p.category_id
+  }));
 }
 
 function getProductById(id) {
@@ -215,12 +256,38 @@ function deleteProduct(id) {
   stmt.run(id);
 }
 
+function updateOrderStatus(id, status) {
+  const validStatuses = ['new', 'in_progress', 'completed', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    throw new Error('Invalid order status');
+  }
+
+  const stmt = db.prepare('UPDATE orders SET status = ? WHERE id = ?');
+  stmt.run(status, id);
+
+  return getOrderById(id);
+}
+
+function deleteOrder(id) {
+  // Удаляем заказ (items хранятся в JSON внутри orders, отдельной таблицы нет)
+  const deleteOrderStmt = db.prepare('DELETE FROM orders WHERE id = ?');
+  const result = deleteOrderStmt.run(id);
+
+  if (result.changes === 0) {
+    throw new Error('Order not found');
+  }
+
+  return { success: true };
+}
+
 module.exports = {
   db,
   createOrder,
   getOrderByNumber,
   getOrderById,
   getAllOrders,
+  updateOrderStatus,
+  deleteOrder,
   getAllCategories,
   createCategory,
   updateCategory,

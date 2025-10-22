@@ -20,7 +20,13 @@ export function useCreateProduct() {
         {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            name: data.name,
+            price: data.price,
+            category_id: data.category,
+            image: data.image,
+            description: data.description,
+          }),
         }
       )
       return response.product
@@ -41,7 +47,13 @@ export function useUpdateProduct() {
         {
           method: 'PUT',
           headers: getAuthHeaders(),
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            name: data.name,
+            price: data.price,
+            category_id: data.category,
+            image: data.image,
+            description: data.description,
+          }),
         }
       )
       return response.product

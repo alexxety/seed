@@ -1,17 +1,39 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useProducts, useCategories } from '@/features/products/api'
-import { useDeleteProduct } from '@/features/admin/products/api'
+import { useDeleteProduct, useCreateProduct, useUpdateProduct } from '@/features/admin/products/api'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import type { Product } from '@/types'
 
 export const Route = createFileRoute('/admin/_admin/products')({
   component: AdminProductsPage,
 })
 
+interface ProductFormState {
+  name: string
+  price: string
+  category: string
+  image: string
+  description: string
+}
+
 function AdminProductsPage() {
   const { data: products, isLoading } = useProducts()
   const { data: categories } = useCategories()
   const deleteProduct = useDeleteProduct()
+  const createProduct = useCreateProduct()
+  const updateProduct = useUpdateProduct()
+
+  const [showModal, setShowModal] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [formData, setFormData] = useState<ProductFormState>({
+    name: '',
+    price: '',
+    category: '',
+    image: '',
+    description: '',
+  })
 
   const getCategoryName = (categoryId: number) => {
     return categories?.find((c) => c.id === categoryId)?.name || 'Без категории'
@@ -23,6 +45,71 @@ function AdminProductsPage() {
     }
   }
 
+  const handleOpenCreate = () => {
+    setEditingProduct(null)
+    setFormData({
+      name: '',
+      price: '',
+      category: categories?.[0]?.id.toString() || '',
+      image: '',
+      description: '',
+    })
+    setShowModal(true)
+  }
+
+  const handleOpenEdit = (product: Product) => {
+    setEditingProduct(product)
+    setFormData({
+      name: product.name,
+      price: product.price.toString(),
+      category: product.category.toString(),
+      image: product.image,
+      description: product.description,
+    })
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setEditingProduct(null)
+    setFormData({
+      name: '',
+      price: '',
+      category: '',
+      image: '',
+      description: '',
+    })
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const data = {
+      name: formData.name,
+      price: parseInt(formData.price),
+      category: parseInt(formData.category),
+      image: formData.image,
+      description: formData.description,
+    }
+
+    if (editingProduct) {
+      updateProduct.mutate(
+        { id: editingProduct.id, data },
+        {
+          onSuccess: () => {
+            handleCloseModal()
+          },
+        }
+      )
+    } else {
+      createProduct.mutate(data, {
+        onSuccess: () => {
+          handleCloseModal()
+        },
+      })
+    }
+  }
+
   if (isLoading) {
     return <div className="text-center py-12">Загрузка товаров...</div>
   }
@@ -31,7 +118,7 @@ function AdminProductsPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Товары</h1>
-        <Button>Добавить товар</Button>
+        <Button onClick={handleOpenCreate}>Добавить товар</Button>
       </div>
 
       {!products || products.length === 0 ? (
@@ -51,7 +138,12 @@ function AdminProductsPage() {
               <p className="text-sm text-gray-600 mb-2">{getCategoryName(product.category)}</p>
               <p className="text-lg font-bold mb-3">{product.price} ₽</p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleOpenEdit(product)}
+                >
                   Редактировать
                 </Button>
                 <Button
@@ -66,6 +158,97 @@ function AdminProductsPage() {
               </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">
+              {editingProduct ? 'Редактировать товар' : 'Добавить товар'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Название</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Цена (₽)</label>
+                <input
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Категория</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                >
+                  {categories?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">URL изображения</label>
+                <input
+                  type="url"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Описание</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={createProduct.isPending || updateProduct.isPending}
+                >
+                  {editingProduct ? 'Сохранить' : 'Создать'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseModal}
+                  disabled={createProduct.isPending || updateProduct.isPending}
+                >
+                  Отмена
+                </Button>
+              </div>
+            </form>
+          </Card>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useAdminOrders, useUpdateOrderStatus } from '@/features/admin/orders/api'
+import { useAdminOrders, useUpdateOrderStatus, useDeleteOrder } from '@/features/admin/orders/api'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
@@ -27,9 +27,16 @@ const statusColors: Record<OrderStatus, string> = {
 function AdminOrdersPage() {
   const { data: orders, isLoading } = useAdminOrders()
   const updateStatus = useUpdateOrderStatus()
+  const deleteOrder = useDeleteOrder()
 
   const handleStatusChange = (orderId: number, newStatus: OrderStatus) => {
     updateStatus.mutate({ id: orderId, status: newStatus })
+  }
+
+  const handleDeleteOrder = (orderId: number, orderNumber: string) => {
+    if (window.confirm(`Вы уверены, что хотите удалить заказ ${orderNumber}?`)) {
+      deleteOrder.mutate(orderId)
+    }
   }
 
   if (isLoading) {
@@ -79,7 +86,7 @@ function AdminOrdersPage() {
             <p className="text-lg font-semibold">Сумма: {order.total_amount} ₽</p>
           </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
             {order.status === 'new' && (
               <Button
                 size="sm"
@@ -108,6 +115,15 @@ function AdminOrdersPage() {
                 </Button>
               </>
             )}
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleDeleteOrder(order.id, order.order_number)}
+              disabled={deleteOrder.isPending}
+              className="ml-auto"
+            >
+              Удалить
+            </Button>
           </div>
         </Card>
       ))}

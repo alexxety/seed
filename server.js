@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const {
-  createOrder, getOrderByNumber, getOrderById, getAllOrders,
+  createOrder, getOrderByNumber, getOrderById, getAllOrders, updateOrderStatus, deleteOrder,
   getAllCategories, createCategory, updateCategory, deleteCategory,
   getAllProducts, getProductById, createProduct, updateProduct, deleteProduct
 } = require('./database');
@@ -296,24 +296,110 @@ app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
       count: orders.length,
       orders: orders.map(order => ({
         id: order.id,
-        orderNumber: order.order_number,
-        fullName: order.full_name,
-        phone: order.phone,
-        deliveryType: order.delivery_type,
-        deliveryDetails: order.delivery_details,
+        order_number: order.order_number,
+        customer_name: order.full_name,
+        customer_phone: order.phone,
+        delivery_type: order.delivery_type,
+        delivery_details: order.delivery_details,
         items: order.items,
-        total: order.total,
-        telegramUsername: order.telegram_username,
-        telegramId: order.telegram_id,
-        telegramFirstName: order.telegram_first_name,
-        telegramLastName: order.telegram_last_name,
-        createdAt: order.created_at,
+        total_amount: order.total,
+        telegram_username: order.telegram_username,
+        telegram_id: order.telegram_id,
+        telegram_first_name: order.telegram_first_name,
+        telegram_last_name: order.telegram_last_name,
+        created_at: order.created_at,
+        updated_at: order.created_at,
         status: order.status
       }))
     });
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders', details: error.message });
+  }
+});
+
+// Получить конкретный заказ по ID
+app.get('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+  try {
+    const order = getOrderById(parseInt(req.params.id));
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({
+      success: true,
+      order: {
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.full_name,
+        customer_phone: order.phone,
+        delivery_type: order.delivery_type,
+        delivery_details: order.delivery_details,
+        items: order.items,
+        total_amount: order.total,
+        telegram_username: order.telegram_username,
+        telegram_id: order.telegram_id,
+        telegram_first_name: order.telegram_first_name,
+        telegram_last_name: order.telegram_last_name,
+        created_at: order.created_at,
+        updated_at: order.created_at,
+        status: order.status
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: 'Failed to fetch order', details: error.message });
+  }
+});
+
+// Обновить статус заказа
+app.patch('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    const order = updateOrderStatus(parseInt(req.params.id), status);
+
+    res.json({
+      success: true,
+      order: {
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.full_name,
+        customer_phone: order.phone,
+        delivery_type: order.delivery_type,
+        delivery_details: order.delivery_details,
+        items: order.items,
+        total_amount: order.total,
+        telegram_username: order.telegram_username,
+        telegram_id: order.telegram_id,
+        telegram_first_name: order.telegram_first_name,
+        telegram_last_name: order.telegram_last_name,
+        created_at: order.created_at,
+        updated_at: order.created_at,
+        status: order.status
+      }
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ error: 'Failed to update order status', details: error.message });
+  }
+});
+
+// Удалить заказ
+app.delete('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+  try {
+    deleteOrder(parseInt(req.params.id));
+    res.json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    if (error.message === 'Order not found') {
+      res.status(404).json({ error: 'Order not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to delete order', details: error.message });
+    }
   }
 });
 
@@ -333,8 +419,9 @@ app.get('/api/categories', (req, res) => {
 // Создать категорию (только для админа)
 app.post('/api/admin/categories', authenticateToken, (req, res) => {
   try {
-    const { name, icon } = req.body;
-    const category = createCategory(name, icon);
+    const { name, emoji, icon } = req.body;
+    const iconValue = emoji || icon; // Принимаем как emoji, так и icon
+    const category = createCategory(name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     console.error('Error creating category:', error);
@@ -346,8 +433,9 @@ app.post('/api/admin/categories', authenticateToken, (req, res) => {
 app.put('/api/admin/categories/:id', authenticateToken, (req, res) => {
   try {
     const { id } = req.params;
-    const { name, icon } = req.body;
-    const category = updateCategory(parseInt(id), name, icon);
+    const { name, emoji, icon } = req.body;
+    const iconValue = emoji || icon; // Принимаем как emoji, так и icon
+    const category = updateCategory(parseInt(id), name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -363,7 +451,11 @@ app.delete('/api/admin/categories/:id', authenticateToken, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting category:', error);
-    res.status(500).json({ error: 'Failed to delete category' });
+    if (error.message.includes('Cannot delete category')) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to delete category' });
+    }
   }
 });
 

@@ -28,6 +28,10 @@ export function useCreateCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
+    onError: (error: any) => {
+      console.error('Error creating category:', error)
+      alert(`❌ Ошибка создания категории\n\n${error.message || 'Неизвестная ошибка'}`)
+    },
   })
 }
 
@@ -49,6 +53,10 @@ export function useUpdateCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
+    onError: (error: any) => {
+      console.error('Error updating category:', error)
+      alert(`❌ Ошибка обновления категории\n\n${error.message || 'Неизвестная ошибка'}`)
+    },
   })
 }
 
@@ -64,6 +72,12 @@ export function useDeleteCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+    onError: (error: any) => {
+      // Показываем ошибку пользователю
+      if (error.message) {
+        alert(error.message)
+      }
     },
   })
 }

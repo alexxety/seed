@@ -19,7 +19,12 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
+
+      - name: Generate Prisma Client for build
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
 
       - name: Build project
         run: npm run build
@@ -46,7 +51,7 @@ jobs:
 
       - name: Install new dependencies on server
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npx prisma generate"
 
       - name: Set environment variables on server
         run: |

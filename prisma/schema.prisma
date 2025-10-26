@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  icon      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Int
+  categoryId  Int      @map("category_id")
+  image       String
+  description String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  @@map("products")
+}
+
+model Order {
+  id                  Int      @id @default(autoincrement())
+  orderNumber         String   @unique @map("order_number")
+  fullName            String   @map("full_name")
+  phone               String
+  deliveryType        String   @map("delivery_type")
+  deliveryDetails     String   @map("delivery_details")
+  items               Json
+  total               Int
+  telegramUsername    String?  @map("telegram_username")
+  telegramId          Int?     @map("telegram_id")
+  telegramFirstName   String?  @map("telegram_first_name")
+  telegramLastName    String?  @map("telegram_last_name")
+  createdAt           DateTime @default(now()) @map("created_at")
+  status              String   @default("new")
+
+  @@map("orders")
+}
+
+model OrderCounter {
+  id      Int @id @default(1)
+  counter Int @default(0)
+
+  @@map("order_counter")
+}

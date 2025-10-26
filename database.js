@@ -1,287 +1,236 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+// Database layer using Prisma ORM with PostgreSQL
+const { PrismaClient } = require('@prisma/client');
 
-// Создаем или открываем базу данных
-const db = new Database(path.join(__dirname, 'orders.db'));
+const prisma = new PrismaClient();
 
-// Создаем таблицу категорий
-db.exec(`
-  CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    icon TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+// ==================== ORDERS ====================
 
-// Создаем таблицу товаров
-db.exec(`
-  CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    price INTEGER NOT NULL,
-    category_id INTEGER NOT NULL,
-    image TEXT NOT NULL,
-    description TEXT NOT NULL,
-    is_active INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id)
-  )
-`);
-
-// Создаем таблицу заказов, если её нет
-db.exec(`
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_number TEXT UNIQUE NOT NULL,
-    full_name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    delivery_type TEXT NOT NULL,
-    delivery_details TEXT NOT NULL,
-    items TEXT NOT NULL,
-    total INTEGER NOT NULL,
-    telegram_username TEXT,
-    telegram_id INTEGER,
-    telegram_first_name TEXT,
-    telegram_last_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'new'
-  )
-`);
-
-// Создаем таблицу для счетчика заказов
-db.exec(`
-  CREATE TABLE IF NOT EXISTS order_counter (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    counter INTEGER NOT NULL DEFAULT 0
-  )
-`);
-
-// Инициализируем счетчик если его нет
-const counterExists = db.prepare('SELECT counter FROM order_counter WHERE id = 1').get();
-if (!counterExists) {
-  // Находим максимальный номер среди существующих заказов
-  const allOrders = db.prepare('SELECT order_number FROM orders').all();
-  let maxNumber = 0;
-  if (allOrders && allOrders.length > 0) {
-    for (const order of allOrders) {
-      const orderNum = parseInt(order.order_number.split('-')[1]);
-      if (orderNum > maxNumber) {
-        maxNumber = orderNum;
-      }
-    }
-  }
-  db.prepare('INSERT INTO order_counter (id, counter) VALUES (1, ?)').run(maxNumber);
-}
-
-// Функция для создания номера заказа
-function generateOrderNumber() {
+// Function to generate order number
+async function generateOrderNumber() {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const todayPrefix = `${year}${month}${day}`;
 
-  // Получаем текущий счетчик и увеличиваем его
-  const updateStmt = db.prepare('UPDATE order_counter SET counter = counter + 1 WHERE id = 1');
-  updateStmt.run();
+  // Get or create counter
+  let counter = await prisma.orderCounter.findUnique({
+    where: { id: 1 },
+  });
 
-  const counterRow = db.prepare('SELECT counter FROM order_counter WHERE id = 1').get();
-  const orderCount = counterRow.counter;
+  if (!counter) {
+    counter = await prisma.orderCounter.create({
+      data: { id: 1, counter: 0 },
+    });
+  }
 
-  // Формат: YYYYMMDD-NNNN где NNNN - сквозной номер по всем заказам
-  const orderNumber = `${todayPrefix}-${String(orderCount).padStart(4, '0')}`;
+  // Increment counter
+  counter = await prisma.orderCounter.update({
+    where: { id: 1 },
+    data: { counter: { increment: 1 } },
+  });
 
+  // Format: YYYYMMDD-NNNN
+  const orderNumber = `${todayPrefix}-${String(counter.counter).padStart(4, '0')}`;
   return orderNumber;
 }
 
-// Функция для создания нового заказа
-function createOrder(customer, items, total) {
-  const orderNumber = generateOrderNumber();
+// Function to create a new order
+async function createOrder(customer, items, total) {
+  const orderNumber = await generateOrderNumber();
 
-  const stmt = db.prepare(`
-    INSERT INTO orders (
-      order_number, full_name, phone, delivery_type, delivery_details, items, total,
-      telegram_username, telegram_id, telegram_first_name, telegram_last_name
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const result = stmt.run(
-    orderNumber,
-    customer.fullName,
-    customer.phone,
-    customer.deliveryType,
-    customer.deliveryDetails,
-    JSON.stringify(items),
-    total,
-    customer.telegramUsername || null,
-    customer.telegramId || null,
-    customer.telegramFirstName || null,
-    customer.telegramLastName || null
-  );
+  const order = await prisma.order.create({
+    data: {
+      orderNumber,
+      fullName: customer.fullName,
+      phone: customer.phone,
+      deliveryType: customer.deliveryType,
+      deliveryDetails: customer.deliveryDetails,
+      items: items, // Prisma handles JSON automatically
+      total,
+      telegramUsername: customer.telegramUsername || null,
+      telegramId: customer.telegramId || null,
+      telegramFirstName: customer.telegramFirstName || null,
+      telegramLastName: customer.telegramLastName || null,
+    },
+  });
 
   return {
-    id: result.lastInsertRowid,
-    orderNumber
+    id: order.id,
+    orderNumber: order.orderNumber,
   };
 }
 
-// Функция для получения заказа по номеру
-function getOrderByNumber(orderNumber) {
-  const stmt = db.prepare('SELECT * FROM orders WHERE order_number = ?');
-  const order = stmt.get(orderNumber);
-
-  if (order) {
-    order.items = JSON.parse(order.items);
-  }
-
-  return order;
-}
-
-// Функция для получения заказа по ID
-function getOrderById(id) {
-  const stmt = db.prepare('SELECT * FROM orders WHERE id = ?');
-  const order = stmt.get(id);
-
-  if (order) {
-    order.items = JSON.parse(order.items);
-  }
-
-  return order;
-}
-
-// Функция для получения всех заказов
-function getAllOrders(limit = 100) {
-  const stmt = db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?');
-  const orders = stmt.all(limit);
-
-  return orders.map(order => {
-    order.items = JSON.parse(order.items);
-    return order;
+// Function to get order by number
+async function getOrderByNumber(orderNumber) {
+  const order = await prisma.order.findUnique({
+    where: { orderNumber },
   });
+  return order;
 }
 
-// ==================== КАТЕГОРИИ ====================
-
-function getAllCategories() {
-  const stmt = db.prepare('SELECT * FROM categories ORDER BY id');
-  return stmt.all();
+// Function to get order by ID
+async function getOrderById(id) {
+  const order = await prisma.order.findUnique({
+    where: { id },
+  });
+  return order;
 }
 
-function createCategory(name, icon) {
-  const stmt = db.prepare('INSERT INTO categories (name, icon) VALUES (?, ?)');
-  const result = stmt.run(name, icon);
-  return { id: result.lastInsertRowid, name, icon };
+// Function to get all orders
+async function getAllOrders(limit = 100) {
+  const orders = await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+  return orders;
 }
 
-function updateCategory(id, name, icon) {
-  const stmt = db.prepare('UPDATE categories SET name = ?, icon = ? WHERE id = ?');
-  stmt.run(name, icon, id);
-  return { id, name, icon };
-}
-
-function deleteCategory(id) {
-  // Проверяем, есть ли товары в этой категории
-  const checkStmt = db.prepare('SELECT COUNT(*) as count FROM products WHERE category_id = ? AND is_active = 1');
-  const result = checkStmt.get(id);
-
-  if (result.count > 0) {
-    throw new Error(`Cannot delete category with ${result.count} products. Please move or delete products first.`);
-  }
-
-  const stmt = db.prepare('DELETE FROM categories WHERE id = ?');
-  stmt.run(id);
-}
-
-// ==================== ТОВАРЫ ====================
-
-function getAllProducts() {
-  const stmt = db.prepare(`
-    SELECT p.*, c.name as category_name, c.icon as category_icon
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.is_active = 1
-    ORDER BY p.id
-  `);
-  const products = stmt.all();
-  // Переименовываем category_id в category для совместимости с фронтендом
-  return products.map(p => ({
-    ...p,
-    category: p.category_id
-  }));
-}
-
-function getProductById(id) {
-  const stmt = db.prepare('SELECT * FROM products WHERE id = ?');
-  return stmt.get(id);
-}
-
-function createProduct(product) {
-  const stmt = db.prepare(`
-    INSERT INTO products (name, price, category_id, image, description)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-  const result = stmt.run(
-    product.name,
-    product.price,
-    product.category_id,
-    product.image,
-    product.description
-  );
-  return { id: result.lastInsertRowid, ...product };
-}
-
-function updateProduct(id, product) {
-  const stmt = db.prepare(`
-    UPDATE products
-    SET name = ?, price = ?, category_id = ?, image = ?, description = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `);
-  stmt.run(
-    product.name,
-    product.price,
-    product.category_id,
-    product.image,
-    product.description,
-    id
-  );
-  return { id, ...product };
-}
-
-function deleteProduct(id) {
-  // Мягкое удаление - просто помечаем как неактивный
-  const stmt = db.prepare('UPDATE products SET is_active = 0 WHERE id = ?');
-  stmt.run(id);
-}
-
-function updateOrderStatus(id, status) {
+// Function to update order status
+async function updateOrderStatus(id, status) {
   const validStatuses = ['new', 'in_progress', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     throw new Error('Invalid order status');
   }
 
-  const stmt = db.prepare('UPDATE orders SET status = ? WHERE id = ?');
-  stmt.run(status, id);
+  const order = await prisma.order.update({
+    where: { id },
+    data: { status },
+  });
 
-  return getOrderById(id);
+  return order;
 }
 
-function deleteOrder(id) {
-  // Удаляем заказ (items хранятся в JSON внутри orders, отдельной таблицы нет)
-  const deleteOrderStmt = db.prepare('DELETE FROM orders WHERE id = ?');
-  const result = deleteOrderStmt.run(id);
-
-  if (result.changes === 0) {
-    throw new Error('Order not found');
-  }
-
+// Function to delete order
+async function deleteOrder(id) {
+  await prisma.order.delete({
+    where: { id },
+  });
   return { success: true };
 }
 
+// ==================== CATEGORIES ====================
+
+async function getAllCategories() {
+  return await prisma.category.findMany({
+    orderBy: { id: 'asc' },
+  });
+}
+
+async function createCategory(name, icon) {
+  const category = await prisma.category.create({
+    data: { name, icon },
+  });
+  return category;
+}
+
+async function updateCategory(id, name, icon) {
+  const category = await prisma.category.update({
+    where: { id },
+    data: { name, icon },
+  });
+  return category;
+}
+
+async function deleteCategory(id) {
+  // Check if there are products in this category
+  const productsCount = await prisma.product.count({
+    where: {
+      categoryId: id,
+      isActive: true,
+    },
+  });
+
+  if (productsCount > 0) {
+    throw new Error(
+      `Cannot delete category with ${productsCount} products. Please move or delete products first.`
+    );
+  }
+
+  await prisma.category.delete({
+    where: { id },
+  });
+}
+
+// ==================== PRODUCTS ====================
+
+async function getAllProducts() {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    include: {
+      category: {
+        select: {
+          name: true,
+          icon: true,
+        },
+      },
+    },
+    orderBy: { id: 'asc' },
+  });
+
+  // Map to match old API format
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    category: p.categoryId, // For frontend compatibility
+    category_id: p.categoryId,
+    category_name: p.category.name,
+    category_icon: p.category.icon,
+    image: p.image,
+    description: p.description,
+    is_active: p.isActive,
+    created_at: p.createdAt,
+    updated_at: p.updatedAt,
+  }));
+}
+
+async function getProductById(id) {
+  const product = await prisma.product.findUnique({
+    where: { id },
+  });
+  return product;
+}
+
+async function createProduct(product) {
+  const newProduct = await prisma.product.create({
+    data: {
+      name: product.name,
+      price: product.price,
+      categoryId: product.category_id,
+      image: product.image,
+      description: product.description,
+    },
+  });
+  return newProduct;
+}
+
+async function updateProduct(id, product) {
+  const updatedProduct = await prisma.product.update({
+    where: { id },
+    data: {
+      name: product.name,
+      price: product.price,
+      categoryId: product.category_id,
+      image: product.image,
+      description: product.description,
+    },
+  });
+  return updatedProduct;
+}
+
+async function deleteProduct(id) {
+  // Soft delete - mark as inactive
+  await prisma.product.update({
+    where: { id },
+    data: { isActive: false },
+  });
+}
+
+// Export database client and functions
 module.exports = {
-  db,
+  prisma,
+  db: prisma, // Alias for compatibility
   createOrder,
   getOrderByNumber,
   getOrderById,
@@ -296,5 +245,5 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
 };

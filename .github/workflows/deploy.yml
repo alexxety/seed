@@ -49,10 +49,6 @@ jobs:
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/prisma/
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma.config.ts migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
 
-      - name: Install new dependencies on server
-        run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npx prisma generate"
-
       - name: Set environment variables on server
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
@@ -63,6 +59,10 @@ jobs:
           DATABASE_URL=\"postgresql://seedshop:seedshop_secure_password_2025@localhost:5432/seedshop\"
           ENV_EOF
           "
+
+      - name: Install dependencies and generate Prisma Client
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npx prisma generate"
 
       - name: Create PM2 ecosystem config
         run: |

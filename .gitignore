@@ -39,5 +39,7 @@ GITHUB_SECRET_KEY.txt
 # Database
 orders.db
 orders.db-journal
+*.db.backup
+database-sqlite.js.backup
 
 /generated/prisma

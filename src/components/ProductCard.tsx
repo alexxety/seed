@@ -31,9 +31,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             />
           </div>
         ) : (
-          <div className="w-full h-48 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-green-100 via-emerald-50 to-lime-100">
+          <div className="w-full h-48 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-green-100 via-emerald-50 to-lime-100 dark:from-green-900 dark:via-emerald-900 dark:to-lime-900">
             <span className="text-7xl">🌱</span>
-            <span className="text-sm text-gray-600 font-medium">Фото скоро появится</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Фото скоро появится</span>
           </div>
         )}
       </Link>
@@ -45,7 +45,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         className="block flex-1"
       >
         <div className="p-4 min-h-[96px]">
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900 dark:text-white">
             {product.name}
           </h3>
           <p className="text-2xl font-bold text-tg-button">
@@ -56,7 +56,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
       {/* Зона 3: Кнопка */}
       {onAddToCart && (
-        <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+        <div className="px-4 pb-4 pt-0 border-t border-gray-100 dark:border-gray-700">
           <Button
             onClick={() => onAddToCart(product)}
             className="w-full mt-2"

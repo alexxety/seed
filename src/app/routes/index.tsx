@@ -20,7 +20,7 @@ function HomePage() {
     return (
       <div className="flex items-center justify-center h-screen flex-col gap-4">
         <div className="text-5xl">⏳</div>
-        <div className="text-lg text-tg-hint">Загрузка товаров...</div>
+        <div className="text-lg text-gray-500 dark:text-gray-400">Загрузка товаров...</div>
       </div>
     )
   }
@@ -29,7 +29,7 @@ function HomePage() {
     return (
       <div className="flex items-center justify-center h-screen flex-col gap-4 px-4">
         <div className="text-5xl">❌</div>
-        <div className="text-lg text-red-600 text-center">
+        <div className="text-lg text-red-600 dark:text-red-400 text-center">
           Ошибка загрузки: {error.message}
         </div>
       </div>

@@ -18,7 +18,7 @@ function CartPage() {
         <Header title="Корзина" onBack={() => navigate({ to: '/' })} />
         <div className="flex items-center justify-center h-[80vh] flex-col gap-4">
           <div className="text-6xl">🛒</div>
-          <div className="text-xl text-tg-hint">Корзина пуста</div>
+          <div className="text-xl text-gray-500 dark:text-gray-400">Корзина пуста</div>
           <Button onClick={() => navigate({ to: '/' })}>
             Перейти к покупкам
           </Button>
@@ -43,34 +43,34 @@ function CartPage() {
                   const parent = e.currentTarget.parentElement
                   if (parent) {
                     const placeholder = document.createElement('div')
-                    placeholder.className = 'w-20 h-20 flex items-center justify-center bg-gray-100 rounded text-3xl'
+                    placeholder.className = 'w-20 h-20 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded text-3xl'
                     placeholder.textContent = '🌱'
                     parent.insertBefore(placeholder, parent.firstChild)
                   }
                 }}
               />
               <div className="flex-1">
-                <h3 className="font-semibold mb-1">{item.name}</h3>
+                <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">{item.name}</h3>
                 <p className="text-tg-button font-bold">
                   {item.price.toLocaleString('ru-RU')} ₽
                 </p>
                 <div className="flex items-center gap-3 mt-2">
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-8 h-8 rounded-full bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                   >
                     -
                   </button>
-                  <span className="font-semibold">{item.quantity}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-8 h-8 rounded-full bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                   >
                     +
                   </button>
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="ml-auto text-red-500"
+                    className="ml-auto text-red-500 dark:text-red-400"
                   >
                     Удалить
                   </button>
@@ -81,9 +81,9 @@ function CartPage() {
         ))}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold">Итого:</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-white">Итого:</span>
           <span className="text-2xl font-bold text-tg-button">
             {total.toLocaleString('ru-RU')} ₽
           </span>

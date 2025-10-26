@@ -62,7 +62,7 @@ function CheckoutPage() {
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <Card className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">ФИО</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">ФИО</label>
             <Input
               required
               value={formData.fullName}
@@ -74,7 +74,7 @@ function CheckoutPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Телефон</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Телефон</label>
             <Input
               required
               type="tel"
@@ -87,7 +87,7 @@ function CheckoutPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Доставка</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Доставка</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -96,8 +96,8 @@ function CheckoutPage() {
                 }
                 className={`flex-1 py-2 px-4 rounded-lg border-2 ${
                   formData.deliveryType === 'address'
-                    ? 'border-tg-button bg-blue-50'
-                    : 'border-gray-300'
+                    ? 'border-tg-button bg-blue-50 dark:bg-blue-900'
+                    : 'border-gray-300 dark:border-gray-600'
                 }`}
               >
                 📍 По адресу
@@ -109,8 +109,8 @@ function CheckoutPage() {
                 }
                 className={`flex-1 py-2 px-4 rounded-lg border-2 ${
                   formData.deliveryType === 'pvz'
-                    ? 'border-tg-button bg-blue-50'
-                    : 'border-gray-300'
+                    ? 'border-tg-button bg-blue-50 dark:bg-blue-900'
+                    : 'border-gray-300 dark:border-gray-600'
                 }`}
               >
                 📦 СДЕК ПВЗ
@@ -119,7 +119,7 @@ function CheckoutPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
               {formData.deliveryType === 'address' ? 'Адрес' : 'Номер ПВЗ'}
             </label>
             <Input
@@ -138,21 +138,21 @@ function CheckoutPage() {
         </Card>
 
         <Card className="p-4">
-          <h3 className="font-semibold mb-3">Ваш заказ</h3>
+          <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Ваш заказ</h3>
           <div className="space-y-2">
             {items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
-                <span>
+                <span className="text-gray-900 dark:text-white">
                   {item.name} × {item.quantity}
                 </span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
                 </span>
               </div>
             ))}
           </div>
-          <div className="border-t mt-3 pt-3 flex justify-between items-center">
-            <span className="font-semibold text-lg">Итого:</span>
+          <div className="border-t border-gray-200 dark:border-gray-700 mt-3 pt-3 flex justify-between items-center">
+            <span className="font-semibold text-lg text-gray-900 dark:text-white">Итого:</span>
             <span className="text-2xl font-bold text-tg-button">
               {total.toLocaleString('ru-RU')} ₽
             </span>

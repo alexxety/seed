@@ -20,7 +20,7 @@ function ProductPage() {
     return (
       <div className="flex items-center justify-center h-screen flex-col gap-4">
         <div className="text-5xl">❌</div>
-        <div className="text-lg">Товар не найден</div>
+        <div className="text-lg text-gray-900 dark:text-white">Товар не найден</div>
       </div>
     )
   }
@@ -43,14 +43,14 @@ function ProductPage() {
             const parent = e.currentTarget.parentElement
             if (parent) {
               const placeholder = document.createElement('div')
-              placeholder.className = 'w-full h-80 flex items-center justify-center bg-gray-100 text-7xl rounded-lg mb-4'
+              placeholder.className = 'w-full h-80 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-7xl rounded-lg mb-4'
               placeholder.textContent = '🌱'
               parent.insertBefore(placeholder, parent.firstChild)
             }
           }}
         />
-        <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
-        <p className="text-tg-hint mb-4">{product.description}</p>
+        <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{product.name}</h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{product.description}</p>
         <div className="text-3xl font-bold text-tg-button mb-6">
           {product.price.toLocaleString('ru-RU')} ₽
         </div>
@@ -58,14 +58,14 @@ function ProductPage() {
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 rounded-full bg-gray-200 text-xl"
+            className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-xl"
           >
             -
           </button>
-          <span className="text-xl font-semibold">{quantity}</span>
+          <span className="text-xl font-semibold text-gray-900 dark:text-white">{quantity}</span>
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-10 h-10 rounded-full bg-gray-200 text-xl"
+            className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-xl"
           >
             +
           </button>

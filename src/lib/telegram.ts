@@ -50,9 +50,20 @@ export function useTelegramTheme() {
   useEffect(() => {
     if (themeParams) {
       const root = document.documentElement
+
+      // Determine if dark theme based on background color brightness
       if (themeParams.bg_color) {
         root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color)
+
+        // Check if background is dark
+        const isDark = isColorDark(themeParams.bg_color)
+        if (isDark) {
+          root.classList.add('dark')
+        } else {
+          root.classList.remove('dark')
+        }
       }
+
       if (themeParams.text_color) {
         root.style.setProperty('--tg-theme-text-color', themeParams.text_color)
       }
@@ -67,4 +78,21 @@ export function useTelegramTheme() {
       }
     }
   }, [themeParams])
+}
+
+// Helper function to determine if a color is dark
+function isColorDark(color: string): boolean {
+  // Remove # if present
+  const hex = color.replace('#', '')
+
+  // Convert to RGB
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Return true if dark (luminance < 0.5)
+  return luminance < 0.5
 }

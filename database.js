@@ -1,8 +1,39 @@
 // Database layer using Prisma ORM with PostgreSQL
 require('dotenv/config');
 const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
 
 const prisma = new PrismaClient();
+
+// Encryption settings for sensitive data
+const ENCRYPTION_KEY = process.env.JWT_SECRET || 'default-encryption-key-change-in-production';
+const ALGORITHM = 'aes-256-cbc';
+
+// Helper functions for encryption
+function encrypt(text) {
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(text) {
+  try {
+    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+    const parts = text.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = parts[1];
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return text; // Return original if decryption fails
+  }
+}
 
 // ==================== ORDERS ====================
 
@@ -228,6 +259,211 @@ async function deleteProduct(id) {
   });
 }
 
+// ==================== SETTINGS ====================
+
+// Get all settings
+async function getAllSettings() {
+  const settings = await prisma.setting.findMany({
+    orderBy: [
+      { category: 'asc' },
+      { label: 'asc' }
+    ]
+  });
+
+  // Decrypt encrypted values and mask secrets for display
+  return settings.map(setting => {
+    if (setting.isEncrypted && setting.value) {
+      const decryptedValue = decrypt(setting.value);
+      // For secret type, mask the value for display
+      if (setting.type === 'secret') {
+        return {
+          ...setting,
+          displayValue: '••••' + decryptedValue.slice(-4),
+          value: decryptedValue // Full value for backend use
+        };
+      }
+      return { ...setting, value: decryptedValue };
+    }
+    return setting;
+  });
+}
+
+// Get settings by category
+async function getSettingsByCategory(category) {
+  const settings = await prisma.setting.findMany({
+    where: { category },
+    orderBy: { label: 'asc' }
+  });
+
+  return settings.map(setting => {
+    if (setting.isEncrypted && setting.value) {
+      const decryptedValue = decrypt(setting.value);
+      if (setting.type === 'secret') {
+        return {
+          ...setting,
+          displayValue: '••••' + decryptedValue.slice(-4),
+          value: decryptedValue
+        };
+      }
+      return { ...setting, value: decryptedValue };
+    }
+    return setting;
+  });
+}
+
+// Get single setting by key
+async function getSetting(key) {
+  const setting = await prisma.setting.findUnique({
+    where: { key }
+  });
+
+  if (!setting) return null;
+
+  if (setting.isEncrypted && setting.value) {
+    setting.value = decrypt(setting.value);
+  }
+
+  return setting;
+}
+
+// Get setting value by key (returns just the value)
+async function getSettingValue(key, defaultValue = null) {
+  const setting = await getSetting(key);
+  return setting ? setting.value : defaultValue;
+}
+
+// Create new setting
+async function createSetting(data) {
+  const settingData = {
+    key: data.key,
+    value: data.isEncrypted ? encrypt(data.value) : data.value,
+    label: data.label,
+    description: data.description,
+    type: data.type || 'text',
+    category: data.category || 'general',
+    isRequired: data.isRequired || false,
+    isEncrypted: data.isEncrypted || false,
+  };
+
+  const setting = await prisma.setting.create({
+    data: settingData
+  });
+
+  return setting;
+}
+
+// Update setting
+async function updateSetting(key, value) {
+  const setting = await prisma.setting.findUnique({
+    where: { key }
+  });
+
+  if (!setting) {
+    throw new Error(`Setting with key "${key}" not found`);
+  }
+
+  const updatedValue = setting.isEncrypted ? encrypt(value) : value;
+
+  const updated = await prisma.setting.update({
+    where: { key },
+    data: { value: updatedValue }
+  });
+
+  return updated;
+}
+
+// Update multiple settings at once
+async function updateSettings(updates) {
+  const results = [];
+
+  for (const update of updates) {
+    try {
+      const result = await updateSetting(update.key, update.value);
+      results.push({ success: true, key: update.key, setting: result });
+    } catch (error) {
+      results.push({ success: false, key: update.key, error: error.message });
+    }
+  }
+
+  return results;
+}
+
+// Delete setting
+async function deleteSetting(key) {
+  await prisma.setting.delete({
+    where: { key }
+  });
+}
+
+// Initialize default settings from environment variables
+async function initializeSettings() {
+  const defaultSettings = [
+    {
+      key: 'telegram.bot_token',
+      value: process.env.TELEGRAM_BOT_TOKEN || '',
+      label: 'Токен Telegram бота',
+      description: 'Токен бота для работы мини-приложения',
+      type: 'secret',
+      category: 'telegram',
+      isRequired: true,
+      isEncrypted: true,
+    },
+    {
+      key: 'telegram.chat_id',
+      value: process.env.TELEGRAM_CHAT_ID || '',
+      label: 'ID чата для уведомлений',
+      description: 'ID чата или канала, куда отправляются заказы',
+      type: 'text',
+      category: 'telegram',
+      isRequired: true,
+      isEncrypted: false,
+    },
+    {
+      key: 'telegram.admin_id',
+      value: '',
+      label: 'ID администратора',
+      description: 'Telegram ID администратора магазина',
+      type: 'text',
+      category: 'telegram',
+      isRequired: false,
+      isEncrypted: false,
+    },
+    {
+      key: 'bot.name',
+      value: 'Seed Shop',
+      label: 'Название магазина',
+      description: 'Отображаемое название вашего магазина',
+      type: 'text',
+      category: 'bot',
+      isRequired: true,
+      isEncrypted: false,
+    },
+    {
+      key: 'bot.welcome_message',
+      value: 'Добро пожаловать в наш магазин! 🌱',
+      label: 'Приветственное сообщение',
+      description: 'Сообщение при запуске бота',
+      type: 'textarea',
+      category: 'bot',
+      isRequired: false,
+      isEncrypted: false,
+    },
+  ];
+
+  for (const settingData of defaultSettings) {
+    const existing = await prisma.setting.findUnique({
+      where: { key: settingData.key }
+    });
+
+    if (!existing) {
+      await createSetting(settingData);
+      console.log(`✅ Initialized setting: ${settingData.key}`);
+    }
+  }
+
+  console.log('✅ Settings initialization completed');
+}
+
 // Export database client and functions
 module.exports = {
   prisma,
@@ -247,4 +483,13 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  getAllSettings,
+  getSettingsByCategory,
+  getSetting,
+  getSettingValue,
+  createSetting,
+  updateSetting,
+  updateSettings,
+  deleteSetting,
+  initializeSettings,
 };

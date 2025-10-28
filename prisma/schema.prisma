@@ -60,3 +60,19 @@ model OrderCounter {
 
   @@map("order_counter")
 }
+
+model Setting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @db.Text
+  label       String
+  description String?  @db.Text
+  type        String   @default("text") // text, number, secret, textarea
+  category    String   @default("general") // telegram, bot, system
+  isRequired  Boolean  @default(false) @map("is_required")
+  isEncrypted Boolean  @default(false) @map("is_encrypted")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("settings")
+}

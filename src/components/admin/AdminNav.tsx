@@ -35,6 +35,13 @@ export function AdminNav() {
           >
             Категории
           </Link>
+          <Link
+            to="/admin/settings"
+            className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+            activeProps={{ className: 'bg-tg-button text-white' }}
+          >
+            Настройки
+          </Link>
         </div>
         <Button onClick={handleLogout} variant="outline" size="sm">
           Выйти

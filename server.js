@@ -10,7 +10,8 @@ const rateLimit = require('express-rate-limit');
 const {
   createOrder, getOrderByNumber, getOrderById, getAllOrders, updateOrderStatus, deleteOrder,
   getAllCategories, createCategory, updateCategory, deleteCategory,
-  getAllProducts, getProductById, createProduct, updateProduct, deleteProduct
+  getAllProducts, getProductById, createProduct, updateProduct, deleteProduct,
+  getAllSettings, getSettingsByCategory, getSetting, getSettingValue, updateSetting, updateSettings, initializeSettings
 } = require('./database');
 
 const app = express();
@@ -522,10 +523,131 @@ app.delete('/api/admin/products/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== SETTINGS API ====================
+
+// Получить все настройки (только для админа)
+app.get('/api/admin/settings', authenticateToken, async (req, res) => {
+  try {
+    const settings = await getAllSettings();
+
+    // Для frontend возвращаем displayValue для секретов
+    const settingsForDisplay = settings.map(setting => {
+      if (setting.type === 'secret' && setting.displayValue) {
+        return {
+          ...setting,
+          value: setting.displayValue // Показываем маскированное значение
+        };
+      }
+      return setting;
+    });
+
+    res.json({ success: true, settings: settingsForDisplay });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Получить настройки по категории (только для админа)
+app.get('/api/admin/settings/category/:category', authenticateToken, async (req, res) => {
+  try {
+    const { category } = req.params;
+    const settings = await getSettingsByCategory(category);
+
+    const settingsForDisplay = settings.map(setting => {
+      if (setting.type === 'secret' && setting.displayValue) {
+        return {
+          ...setting,
+          value: setting.displayValue
+        };
+      }
+      return setting;
+    });
+
+    res.json({ success: true, settings: settingsForDisplay });
+  } catch (error) {
+    console.error('Error fetching settings by category:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Получить одну настройку по ключу (только для админа)
+app.get('/api/admin/settings/:key', authenticateToken, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const setting = await getSetting(key);
+
+    if (!setting) {
+      return res.status(404).json({ error: 'Setting not found' });
+    }
+
+    // Для секретов показываем маскированное значение
+    if (setting.type === 'secret') {
+      setting.displayValue = '••••' + setting.value.slice(-4);
+      setting.value = setting.displayValue;
+    }
+
+    res.json({ success: true, setting });
+  } catch (error) {
+    console.error('Error fetching setting:', error);
+    res.status(500).json({ error: 'Failed to fetch setting' });
+  }
+});
+
+// Обновить одну настройку (только для админа)
+app.put('/api/admin/settings/:key', authenticateToken, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+
+    if (value === undefined || value === null) {
+      return res.status(400).json({ error: 'Value is required' });
+    }
+
+    const updated = await updateSetting(key, value);
+    res.json({ success: true, setting: updated });
+  } catch (error) {
+    console.error('Error updating setting:', error);
+    res.status(500).json({ error: error.message || 'Failed to update setting' });
+  }
+});
+
+// Обновить несколько настроек за раз (только для админа)
+app.put('/api/admin/settings', authenticateToken, async (req, res) => {
+  try {
+    const { settings } = req.body;
+
+    if (!Array.isArray(settings)) {
+      return res.status(400).json({ error: 'Settings must be an array' });
+    }
+
+    const results = await updateSettings(settings);
+    const allSuccess = results.every(r => r.success);
+
+    res.json({
+      success: allSuccess,
+      results,
+      message: allSuccess ? 'All settings updated successfully' : 'Some settings failed to update'
+    });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
 // Статические файлы обслуживаются nginx, поэтому этот роут не нужен
 // app.get('*', (req, res) => {
 //   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 // });
+
+// Initialize settings on startup
+(async () => {
+  try {
+    await initializeSettings();
+  } catch (error) {
+    console.error('Failed to initialize settings:', error);
+  }
+})();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

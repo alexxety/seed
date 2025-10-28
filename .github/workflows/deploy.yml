@@ -36,8 +36,6 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
-          # Test SSH connection
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "echo 'SSH connection successful'"
 
       - name: Deploy to Hetzner
         run: |
@@ -51,7 +49,7 @@ jobs:
 
       - name: Set environment variables on server
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
           PORT=3000
           TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
@@ -62,11 +60,11 @@ jobs:
 
       - name: Install dependencies and generate Prisma Client
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npx prisma generate"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npx prisma generate"
 
       - name: Create PM2 ecosystem config
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/ecosystem.config.js << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/ecosystem.config.js << 'EOF'
           module.exports = {
             apps: [{
               name: 'telegram-shop',
@@ -83,4 +81,4 @@ jobs:
 
       - name: Restart server
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js"

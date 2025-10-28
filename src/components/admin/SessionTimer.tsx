@@ -18,6 +18,12 @@ export function SessionTimer() {
 
   if (!expiresAt) return null
 
+  // Validate dates
+  if (!Number.isFinite(expiresAt) || !Number.isFinite(lastActivity)) {
+    logout()
+    return null
+  }
+
   const timeLeft = expiresAt - Date.now()
   const inactiveTime = Date.now() - lastActivity
 
@@ -26,9 +32,15 @@ export function SessionTimer() {
     return null
   }
 
-  return (
-    <div className="text-sm text-tg-hint">
-      Сессия истекает {formatDistanceToNow(expiresAt, { addSuffix: true, locale: ru })}
-    </div>
-  )
+  try {
+    return (
+      <div className="text-sm text-tg-hint">
+        Сессия истекает {formatDistanceToNow(expiresAt, { addSuffix: true, locale: ru })}
+      </div>
+    )
+  } catch (error) {
+    console.error('Invalid date in SessionTimer:', error)
+    logout()
+    return null
+  }
 }

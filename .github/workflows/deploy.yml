@@ -45,7 +45,7 @@ jobs:
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
           # Sync Prisma files
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/prisma/
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma.config.ts migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
 
       - name: Set environment variables on server
         run: |

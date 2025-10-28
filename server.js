@@ -180,7 +180,7 @@ app.post('/api/send-order', apiLimiter, async (req, res) => {
     }
 
     // Сохраняем заказ в базу данных
-    const order = createOrder(customer, items, total);
+    const order = await createOrder(customer, items, total);
 
     // Формируем список товаров
     const itemsList = items.map(item =>
@@ -256,10 +256,10 @@ ${itemsList}
 });
 
 // API endpoint для получения информации о заказе
-app.get('/api/order/:orderNumber', (req, res) => {
+app.get('/api/order/:orderNumber', async (req, res) => {
   try {
     const { orderNumber } = req.params;
-    const order = getOrderByNumber(orderNumber);
+    const order = await getOrderByNumber(orderNumber);
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
@@ -286,10 +286,10 @@ app.get('/api/order/:orderNumber', (req, res) => {
 });
 
 // API endpoint для получения всех заказов (с JWT аутентификацией)
-app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
+app.get('/api/orders', authenticateToken, apiLimiter, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
-    const orders = getAllOrders(limit);
+    const orders = await getAllOrders(limit);
 
     res.json({
       success: true,
@@ -319,9 +319,9 @@ app.get('/api/orders', authenticateToken, apiLimiter, (req, res) => {
 });
 
 // Получить конкретный заказ по ID
-app.get('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+app.get('/api/orders/:id', authenticateToken, apiLimiter, async (req, res) => {
   try {
-    const order = getOrderById(parseInt(req.params.id));
+    const order = await getOrderById(parseInt(req.params.id));
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
@@ -353,14 +353,14 @@ app.get('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
 });
 
 // Обновить статус заказа
-app.patch('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+app.patch('/api/orders/:id', authenticateToken, apiLimiter, async (req, res) => {
   try {
     const { status } = req.body;
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const order = updateOrderStatus(parseInt(req.params.id), status);
+    const order = await updateOrderStatus(parseInt(req.params.id), status);
 
     res.json({
       success: true,
@@ -389,9 +389,9 @@ app.patch('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
 });
 
 // Удалить заказ
-app.delete('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
+app.delete('/api/orders/:id', authenticateToken, apiLimiter, async (req, res) => {
   try {
-    deleteOrder(parseInt(req.params.id));
+    await deleteOrder(parseInt(req.params.id));
     res.json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {
     console.error('Error deleting order:', error);
@@ -406,9 +406,9 @@ app.delete('/api/orders/:id', authenticateToken, apiLimiter, (req, res) => {
 // ==================== API ДЛЯ КАТЕГОРИЙ ====================
 
 // Получить все категории (публичный endpoint)
-app.get('/api/categories', (req, res) => {
+app.get('/api/categories', async (req, res) => {
   try {
-    const categories = getAllCategories();
+    const categories = await getAllCategories();
     res.json({ success: true, categories });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -417,11 +417,11 @@ app.get('/api/categories', (req, res) => {
 });
 
 // Создать категорию (только для админа)
-app.post('/api/admin/categories', authenticateToken, (req, res) => {
+app.post('/api/admin/categories', authenticateToken, async (req, res) => {
   try {
     const { name, emoji, icon } = req.body;
     const iconValue = emoji || icon; // Принимаем как emoji, так и icon
-    const category = createCategory(name, iconValue);
+    const category = await createCategory(name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     console.error('Error creating category:', error);
@@ -430,12 +430,12 @@ app.post('/api/admin/categories', authenticateToken, (req, res) => {
 });
 
 // Обновить категорию (только для админа)
-app.put('/api/admin/categories/:id', authenticateToken, (req, res) => {
+app.put('/api/admin/categories/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, emoji, icon } = req.body;
     const iconValue = emoji || icon; // Принимаем как emoji, так и icon
-    const category = updateCategory(parseInt(id), name, iconValue);
+    const category = await updateCategory(parseInt(id), name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -444,10 +444,10 @@ app.put('/api/admin/categories/:id', authenticateToken, (req, res) => {
 });
 
 // Удалить категорию (только для админа)
-app.delete('/api/admin/categories/:id', authenticateToken, (req, res) => {
+app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    deleteCategory(parseInt(id));
+    await deleteCategory(parseInt(id));
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting category:', error);
@@ -462,9 +462,9 @@ app.delete('/api/admin/categories/:id', authenticateToken, (req, res) => {
 // ==================== API ДЛЯ ТОВАРОВ ====================
 
 // Получить все товары (публичный endpoint)
-app.get('/api/products', (req, res) => {
+app.get('/api/products', async (req, res) => {
   try {
-    const products = getAllProducts();
+    const products = await getAllProducts();
     res.json({ success: true, products });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -473,10 +473,10 @@ app.get('/api/products', (req, res) => {
 });
 
 // Получить товар по ID (публичный endpoint)
-app.get('/api/products/:id', (req, res) => {
+app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const product = getProductById(parseInt(id));
+    const product = await getProductById(parseInt(id));
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -488,9 +488,9 @@ app.get('/api/products/:id', (req, res) => {
 });
 
 // Создать товар (только для админа)
-app.post('/api/admin/products', authenticateToken, (req, res) => {
+app.post('/api/admin/products', authenticateToken, async (req, res) => {
   try {
-    const product = createProduct(req.body);
+    const product = await createProduct(req.body);
     res.json({ success: true, product });
   } catch (error) {
     console.error('Error creating product:', error);
@@ -499,10 +499,10 @@ app.post('/api/admin/products', authenticateToken, (req, res) => {
 });
 
 // Обновить товар (только для админа)
-app.put('/api/admin/products/:id', authenticateToken, (req, res) => {
+app.put('/api/admin/products/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const product = updateProduct(parseInt(id), req.body);
+    const product = await updateProduct(parseInt(id), req.body);
     res.json({ success: true, product });
   } catch (error) {
     console.error('Error updating product:', error);
@@ -511,10 +511,10 @@ app.put('/api/admin/products/:id', authenticateToken, (req, res) => {
 });
 
 // Удалить товар (только для админа)
-app.delete('/api/admin/products/:id', authenticateToken, (req, res) => {
+app.delete('/api/admin/products/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    deleteProduct(parseInt(id));
+    await deleteProduct(parseInt(id));
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting product:', error);

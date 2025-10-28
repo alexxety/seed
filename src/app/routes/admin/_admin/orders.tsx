@@ -2,9 +2,22 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useAdminOrders, useUpdateOrderStatus, useDeleteOrder } from '@/features/admin/orders/api'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
+import { format, isValid, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import type { OrderStatus } from '@/types'
+
+function formatOrderDate(dateString: string): string {
+  try {
+    const date = parseISO(dateString)
+    if (!isValid(date)) {
+      return 'Неизвестная дата'
+    }
+    return format(date, 'PPp', { locale: ru })
+  } catch (error) {
+    console.error('Invalid date:', dateString, error)
+    return 'Неизвестная дата'
+  }
+}
 
 export const Route = createFileRoute('/admin/_admin/orders')({
   component: AdminOrdersPage,
@@ -61,7 +74,7 @@ function AdminOrdersPage() {
             <div>
               <h2 className="text-xl font-semibold">Заказ #{order.order_number}</h2>
               <p className="text-gray-600">
-                {format(new Date(order.created_at), 'PPp', { locale: ru })}
+                {formatOrderDate(order.created_at)}
               </p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status]}`}>

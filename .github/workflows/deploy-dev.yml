@@ -64,7 +64,7 @@ jobs:
 
       - name: Install dependencies and generate Prisma Client
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop-dev && npm install --omit=dev --ignore-scripts && npx prisma generate"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop-dev && npm install --omit=dev --ignore-scripts && npm rebuild bcrypt && npx prisma generate"
 
       - name: Create PM2 ecosystem config (Dev)
         run: |

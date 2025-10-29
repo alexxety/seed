@@ -46,7 +46,7 @@ jobs:
           # Sync dist files (HTML, CSS, JS assets) - includes React SPA
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" dist/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/dist/
           # Sync server files
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js cloudflare-service.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/
           # Sync Prisma files
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/prisma/
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/
@@ -59,6 +59,8 @@ jobs:
           TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           DATABASE_URL=\"postgresql://seedshop:seedshop_secure_password_2025@localhost:5432/seedshop_dev\"
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
           ENV_EOF
           "
 

@@ -825,10 +825,10 @@ app.delete('/api/admin/shops/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Статические файлы обслуживаются nginx, поэтому этот роут не нужен
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-// });
+// SPA fallback - все неизвестные маршруты возвращают index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 // Initialize settings on startup
 (async () => {

@@ -11,8 +11,11 @@ const {
   createOrder, getOrderByNumber, getOrderById, getAllOrders, updateOrderStatus, deleteOrder,
   getAllCategories, createCategory, updateCategory, deleteCategory,
   getAllProducts, getProductById, createProduct, updateProduct, deleteProduct,
-  getAllSettings, getSettingsByCategory, getSetting, getSettingValue, updateSetting, updateSettings, initializeSettings
+  getAllSettings, getSettingsByCategory, getSetting, getSettingValue, updateSetting, updateSettings, initializeSettings,
+  createShop, getAllShops, getShopBySubdomain, getShopById, updateShop, updateShopStatus, deleteShop, isSubdomainAvailable
 } = require('./database');
+
+const { createShopDNS, deleteShopDNS, checkSubdomainAvailability } = require('./cloudflare-service');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -632,6 +635,193 @@ app.put('/api/admin/settings', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error updating settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ==================== SHOPS API ====================
+
+// Проверка доступности поддомена (публичный endpoint)
+app.get('/api/shops/check/:subdomain', async (req, res) => {
+  try {
+    const { subdomain } = req.params;
+
+    // Валидация поддомена
+    if (!/^[a-z0-9-]+$/.test(subdomain)) {
+      return res.json({
+        available: false,
+        error: 'Поддомен может содержать только буквы, цифры и дефис'
+      });
+    }
+
+    if (subdomain.length < 3 || subdomain.length > 20) {
+      return res.json({
+        available: false,
+        error: 'Поддомен должен содержать от 3 до 20 символов'
+      });
+    }
+
+    // Проверка зарезервированных поддоменов
+    const reserved = ['www', 'api', 'admin', 'seed', 'deva', 'mail', 'ftp', 'smtp'];
+    if (reserved.includes(subdomain.toLowerCase())) {
+      return res.json({
+        available: false,
+        error: 'Этот поддомен зарезервирован системой'
+      });
+    }
+
+    // Проверка в базе данных
+    const dbAvailable = await isSubdomainAvailable(subdomain);
+
+    res.json({ available: dbAvailable });
+  } catch (error) {
+    console.error('Error checking subdomain:', error);
+    res.status(500).json({ error: 'Ошибка проверки поддомена' });
+  }
+});
+
+// Регистрация нового магазина (публичный endpoint)
+app.post('/api/shops/register', async (req, res) => {
+  try {
+    const { subdomain, ownerName, ownerEmail, ownerPhone, botToken, chatId, adminTelegramId } = req.body;
+
+    // Валидация
+    if (!subdomain || !ownerName || !ownerEmail || !botToken || !chatId || !adminTelegramId) {
+      return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+    }
+
+    // Проверка доступности поддомена
+    const available = await isSubdomainAvailable(subdomain);
+    if (!available) {
+      return res.status(400).json({ error: 'Этот поддомен уже занят' });
+    }
+
+    // Создание DNS записи в Cloudflare
+    const dnsResult = await createShopDNS(subdomain);
+    if (!dnsResult.success) {
+      return res.status(400).json({ error: dnsResult.error || 'Не удалось создать DNS запись' });
+    }
+
+    // Создание магазина в базе данных
+    const shop = await createShop({
+      subdomain,
+      ownerName,
+      ownerEmail,
+      ownerPhone,
+      botToken,
+      chatId,
+      adminTelegramId,
+      status: 'active',
+      plan: 'free',
+    });
+
+    res.json({
+      success: true,
+      shop: {
+        id: shop.id,
+        subdomain: shop.subdomain,
+        url: `https://${shop.subdomain}.x-bro.com`,
+        status: shop.status,
+      },
+      message: `Магазин успешно создан! Он будет доступен через 2-3 минуты по адресу: https://${shop.subdomain}.x-bro.com`
+    });
+  } catch (error) {
+    console.error('Error registering shop:', error);
+    res.status(500).json({ error: error.message || 'Ошибка создания магазина' });
+  }
+});
+
+// Получить все магазины (только для супер-админа)
+app.get('/api/admin/shops', authenticateToken, async (req, res) => {
+  try {
+    const { status, orderBy, order } = req.query;
+    const shops = await getAllShops({ status, orderBy, order });
+
+    // Маскируем токены для безопасности
+    const shopsForDisplay = shops.map(shop => ({
+      ...shop,
+      botToken: undefined,
+      botTokenMasked: shop.botTokenMasked,
+    }));
+
+    res.json({ success: true, shops: shopsForDisplay });
+  } catch (error) {
+    console.error('Error getting shops:', error);
+    res.status(500).json({ error: 'Ошибка получения списка магазинов' });
+  }
+});
+
+// Получить магазин по ID (только для супер-админа)
+app.get('/api/admin/shops/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const shop = await getShopById(parseInt(id));
+
+    if (!shop) {
+      return res.status(404).json({ error: 'Магазин не найден' });
+    }
+
+    res.json({ success: true, shop });
+  } catch (error) {
+    console.error('Error getting shop:', error);
+    res.status(500).json({ error: 'Ошибка получения магазина' });
+  }
+});
+
+// Обновить магазин (только для супер-админа)
+app.put('/api/admin/shops/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const shop = await updateShop(parseInt(id), updates);
+
+    res.json({ success: true, shop });
+  } catch (error) {
+    console.error('Error updating shop:', error);
+    res.status(500).json({ error: error.message || 'Ошибка обновления магазина' });
+  }
+});
+
+// Изменить статус магазина (только для супер-админа)
+app.put('/api/admin/shops/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'Статус обязателен' });
+    }
+
+    const shop = await updateShopStatus(parseInt(id), status);
+
+    res.json({ success: true, shop });
+  } catch (error) {
+    console.error('Error updating shop status:', error);
+    res.status(500).json({ error: error.message || 'Ошибка обновления статуса' });
+  }
+});
+
+// Удалить магазин (только для супер-админа)
+app.delete('/api/admin/shops/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Получаем информацию о магазине
+    const shop = await getShopById(parseInt(id));
+    if (!shop) {
+      return res.status(404).json({ error: 'Магазин не найден' });
+    }
+
+    // Удаляем DNS запись
+    await deleteShopDNS(shop.subdomain);
+
+    // Удаляем из базы данных
+    await deleteShop(parseInt(id));
+
+    res.json({ success: true, message: 'Магазин успешно удалён' });
+  } catch (error) {
+    console.error('Error deleting shop:', error);
+    res.status(500).json({ error: error.message || 'Ошибка удаления магазина' });
   }
 });
 

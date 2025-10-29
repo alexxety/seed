@@ -464,6 +464,134 @@ async function initializeSettings() {
   console.log('✅ Settings initialization completed');
 }
 
+// ==================== SHOPS ====================
+
+// Create new shop
+async function createShop(shopData) {
+  // Encrypt bot token
+  const encryptedToken = encrypt(shopData.botToken);
+
+  const shop = await prisma.shop.create({
+    data: {
+      subdomain: shopData.subdomain.toLowerCase(),
+      ownerName: shopData.ownerName,
+      ownerEmail: shopData.ownerEmail,
+      ownerPhone: shopData.ownerPhone || null,
+      botToken: encryptedToken,
+      chatId: shopData.chatId,
+      adminTelegramId: shopData.adminTelegramId,
+      status: shopData.status || 'active',
+      plan: shopData.plan || 'free',
+      expiresAt: shopData.expiresAt || null,
+    },
+  });
+
+  return shop;
+}
+
+// Get all shops
+async function getAllShops(options = {}) {
+  const { status, orderBy = 'createdAt', order = 'desc' } = options;
+
+  const where = status ? { status } : {};
+
+  const shops = await prisma.shop.findMany({
+    where,
+    orderBy: { [orderBy]: order },
+  });
+
+  // Decrypt bot tokens
+  return shops.map(shop => ({
+    ...shop,
+    botToken: decrypt(shop.botToken),
+    botTokenMasked: '••••' + decrypt(shop.botToken).slice(-4),
+  }));
+}
+
+// Get shop by subdomain
+async function getShopBySubdomain(subdomain) {
+  const shop = await prisma.shop.findUnique({
+    where: { subdomain: subdomain.toLowerCase() },
+  });
+
+  if (!shop) return null;
+
+  return {
+    ...shop,
+    botToken: decrypt(shop.botToken),
+  };
+}
+
+// Get shop by ID
+async function getShopById(id) {
+  const shop = await prisma.shop.findUnique({
+    where: { id },
+  });
+
+  if (!shop) return null;
+
+  return {
+    ...shop,
+    botToken: decrypt(shop.botToken),
+  };
+}
+
+// Update shop
+async function updateShop(id, updates) {
+  const updateData = { ...updates };
+
+  // If botToken is being updated, encrypt it
+  if (updateData.botToken) {
+    updateData.botToken = encrypt(updateData.botToken);
+  }
+
+  // Ensure subdomain is lowercase
+  if (updateData.subdomain) {
+    updateData.subdomain = updateData.subdomain.toLowerCase();
+  }
+
+  const shop = await prisma.shop.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return {
+    ...shop,
+    botToken: decrypt(shop.botToken),
+  };
+}
+
+// Update shop status
+async function updateShopStatus(id, status) {
+  const validStatuses = ['active', 'blocked', 'pending'];
+  if (!validStatuses.includes(status)) {
+    throw new Error('Invalid shop status');
+  }
+
+  const shop = await prisma.shop.update({
+    where: { id },
+    data: { status },
+  });
+
+  return shop;
+}
+
+// Delete shop
+async function deleteShop(id) {
+  await prisma.shop.delete({
+    where: { id },
+  });
+  return { success: true };
+}
+
+// Check if subdomain is available
+async function isSubdomainAvailable(subdomain) {
+  const existing = await prisma.shop.findUnique({
+    where: { subdomain: subdomain.toLowerCase() },
+  });
+  return !existing;
+}
+
 // Export database client and functions
 module.exports = {
   prisma,
@@ -492,4 +620,13 @@ module.exports = {
   updateSettings,
   deleteSetting,
   initializeSettings,
+  // Shops
+  createShop,
+  getAllShops,
+  getShopBySubdomain,
+  getShopById,
+  updateShop,
+  updateShopStatus,
+  deleteShop,
+  isSubdomainAvailable,
 };

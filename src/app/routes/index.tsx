@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useProducts, useCategories } from '@/features/products/api'
 import { useCartStore } from '@/features/cart/store'
@@ -7,6 +7,24 @@ import { CategoryFilter } from '@/components/CategoryFilter'
 import { Header } from '@/components/Header'
 
 export const Route = createFileRoute('/')({
+  beforeLoad: () => {
+    // Только на клиенте
+    if (typeof window === 'undefined') return
+
+    const hostname = window.location.hostname
+
+    // Супер-админ домены
+    if (hostname === 'admin.x-bro.com' || hostname === 'dev-admin.x-bro.com') {
+      throw redirect({ to: '/superadmin/login' })
+    }
+
+    // Главная страница с регистрацией
+    if (hostname === 'x-bro.com' || hostname === 'dev.x-bro.com') {
+      throw redirect({ to: '/register' })
+    }
+
+    // Все остальные домены - показываем магазин
+  },
   component: HomePage,
 })
 

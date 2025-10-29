@@ -9,20 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './app/routes/__root'
+import { Route as SuperadminRouteImport } from './app/routes/superadmin'
 import { Route as RegisterRouteImport } from './app/routes/register'
 import { Route as CheckoutRouteImport } from './app/routes/checkout'
 import { Route as CartRouteImport } from './app/routes/cart'
 import { Route as AdminRouteImport } from './app/routes/admin'
 import { Route as IndexRouteImport } from './app/routes/index'
+import { Route as SuperadminLoginRouteImport } from './app/routes/superadmin/login'
+import { Route as SuperadminSuperadminRouteImport } from './app/routes/superadmin/_superadmin'
 import { Route as SuccessOrderNumberRouteImport } from './app/routes/success.$orderNumber'
 import { Route as ProductIdRouteImport } from './app/routes/product.$id'
 import { Route as AdminLoginRouteImport } from './app/routes/admin/login'
 import { Route as AdminAdminRouteImport } from './app/routes/admin/_admin'
+import { Route as SuperadminSuperadminShopsRouteImport } from './app/routes/superadmin/_superadmin/shops'
 import { Route as AdminAdminSettingsRouteImport } from './app/routes/admin/_admin/settings'
 import { Route as AdminAdminProductsRouteImport } from './app/routes/admin/_admin/products'
 import { Route as AdminAdminOrdersRouteImport } from './app/routes/admin/_admin/orders'
 import { Route as AdminAdminCategoriesRouteImport } from './app/routes/admin/_admin/categories'
 
+const SuperadminRoute = SuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -48,6 +57,15 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperadminLoginRoute = SuperadminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminSuperadminRoute = SuperadminSuperadminRouteImport.update({
+  id: '/_superadmin',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 const SuccessOrderNumberRoute = SuccessOrderNumberRouteImport.update({
   id: '/success/$orderNumber',
   path: '/success/$orderNumber',
@@ -67,6 +85,12 @@ const AdminAdminRoute = AdminAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AdminRoute,
 } as any)
+const SuperadminSuperadminShopsRoute =
+  SuperadminSuperadminShopsRouteImport.update({
+    id: '/shops',
+    path: '/shops',
+    getParentRoute: () => SuperadminSuperadminRoute,
+  } as any)
 const AdminAdminSettingsRoute = AdminAdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -94,13 +118,16 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/register': typeof RegisterRoute
+  '/superadmin': typeof SuperadminSuperadminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
+  '/superadmin/login': typeof SuperadminLoginRoute
   '/admin/categories': typeof AdminAdminCategoriesRoute
   '/admin/orders': typeof AdminAdminOrdersRoute
   '/admin/products': typeof AdminAdminProductsRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
+  '/superadmin/shops': typeof SuperadminSuperadminShopsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,13 +135,16 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/register': typeof RegisterRoute
+  '/superadmin': typeof SuperadminSuperadminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
+  '/superadmin/login': typeof SuperadminLoginRoute
   '/admin/categories': typeof AdminAdminCategoriesRoute
   '/admin/orders': typeof AdminAdminOrdersRoute
   '/admin/products': typeof AdminAdminProductsRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
+  '/superadmin/shops': typeof SuperadminSuperadminShopsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,14 +153,18 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/register': typeof RegisterRoute
+  '/superadmin': typeof SuperadminRouteWithChildren
   '/admin/_admin': typeof AdminAdminRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
   '/product/$id': typeof ProductIdRoute
   '/success/$orderNumber': typeof SuccessOrderNumberRoute
+  '/superadmin/_superadmin': typeof SuperadminSuperadminRouteWithChildren
+  '/superadmin/login': typeof SuperadminLoginRoute
   '/admin/_admin/categories': typeof AdminAdminCategoriesRoute
   '/admin/_admin/orders': typeof AdminAdminOrdersRoute
   '/admin/_admin/products': typeof AdminAdminProductsRoute
   '/admin/_admin/settings': typeof AdminAdminSettingsRoute
+  '/superadmin/_superadmin/shops': typeof SuperadminSuperadminShopsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,13 +174,16 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/register'
+    | '/superadmin'
     | '/admin/login'
     | '/product/$id'
     | '/success/$orderNumber'
+    | '/superadmin/login'
     | '/admin/categories'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/settings'
+    | '/superadmin/shops'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,13 +191,16 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/register'
+    | '/superadmin'
     | '/admin/login'
     | '/product/$id'
     | '/success/$orderNumber'
+    | '/superadmin/login'
     | '/admin/categories'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/settings'
+    | '/superadmin/shops'
   id:
     | '__root__'
     | '/'
@@ -168,14 +208,18 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/register'
+    | '/superadmin'
     | '/admin/_admin'
     | '/admin/login'
     | '/product/$id'
     | '/success/$orderNumber'
+    | '/superadmin/_superadmin'
+    | '/superadmin/login'
     | '/admin/_admin/categories'
     | '/admin/_admin/orders'
     | '/admin/_admin/products'
     | '/admin/_admin/settings'
+    | '/superadmin/_superadmin/shops'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,12 +228,20 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   RegisterRoute: typeof RegisterRoute
+  SuperadminRoute: typeof SuperadminRouteWithChildren
   ProductIdRoute: typeof ProductIdRoute
   SuccessOrderNumberRoute: typeof SuccessOrderNumberRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -225,6 +277,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/superadmin/login': {
+      id: '/superadmin/login'
+      path: '/login'
+      fullPath: '/superadmin/login'
+      preLoaderRoute: typeof SuperadminLoginRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/_superadmin': {
+      id: '/superadmin/_superadmin'
+      path: ''
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminSuperadminRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/success/$orderNumber': {
       id: '/success/$orderNumber'
       path: '/success/$orderNumber'
@@ -252,6 +318,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AdminAdminRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/superadmin/_superadmin/shops': {
+      id: '/superadmin/_superadmin/shops'
+      path: '/shops'
+      fullPath: '/superadmin/shops'
+      preLoaderRoute: typeof SuperadminSuperadminShopsRouteImport
+      parentRoute: typeof SuperadminSuperadminRoute
     }
     '/admin/_admin/settings': {
       id: '/admin/_admin/settings'
@@ -314,12 +387,38 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface SuperadminSuperadminRouteChildren {
+  SuperadminSuperadminShopsRoute: typeof SuperadminSuperadminShopsRoute
+}
+
+const SuperadminSuperadminRouteChildren: SuperadminSuperadminRouteChildren = {
+  SuperadminSuperadminShopsRoute: SuperadminSuperadminShopsRoute,
+}
+
+const SuperadminSuperadminRouteWithChildren =
+  SuperadminSuperadminRoute._addFileChildren(SuperadminSuperadminRouteChildren)
+
+interface SuperadminRouteChildren {
+  SuperadminSuperadminRoute: typeof SuperadminSuperadminRouteWithChildren
+  SuperadminLoginRoute: typeof SuperadminLoginRoute
+}
+
+const SuperadminRouteChildren: SuperadminRouteChildren = {
+  SuperadminSuperadminRoute: SuperadminSuperadminRouteWithChildren,
+  SuperadminLoginRoute: SuperadminLoginRoute,
+}
+
+const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
+  SuperadminRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   RegisterRoute: RegisterRoute,
+  SuperadminRoute: SuperadminRouteWithChildren,
   ProductIdRoute: ProductIdRoute,
   SuccessOrderNumberRoute: SuccessOrderNumberRoute,
 }

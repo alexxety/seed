@@ -17,6 +17,11 @@ const {
 
 const { createShopDNS, deleteShopDNS, checkSubdomainAvailability } = require('./cloudflare-service');
 
+// Multitenancy functions
+const { createTenant, getAllTenants, getTenantBySlug, getTenantById } = require('./server/src/db/tenants');
+const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context');
+const { autoSetSearchPath } = require('./server/src/multitenancy/middleware');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -67,6 +72,10 @@ app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.static('dist'));
+
+// Tenant context middleware (определяет tenant по поддомену/заголовку)
+app.use(setTenantContext);
+app.use(autoSetSearchPath);
 
 // ===========================================
 // HEALTH CHECK ENDPOINT
@@ -215,6 +224,95 @@ app.post('/api/superadmin/login', loginLimiter, async (req, res) => {
   } catch (error) {
     console.error('SuperAdmin login error:', error);
     res.status(500).json({ error: 'Ошибка авторизации' });
+  }
+});
+
+// ===========================================
+// SUPERADMIN TENANT MANAGEMENT API
+// ===========================================
+
+// Получить список всех tenants
+app.get('/api/superadmin/tenants', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const tenants = await getAllTenants();
+
+    // Добавляем схему для каждого tenant
+    const tenantsWithSchema = tenants.map(tenant => ({
+      ...tenant,
+      schema: `t_${tenant.id.replace(/-/g, '_')}`
+    }));
+
+    res.json({ success: true, tenants: tenantsWithSchema });
+  } catch (error) {
+    console.error('Get tenants error:', error);
+    res.status(500).json({ error: 'Ошибка получения списка tenants' });
+  }
+});
+
+// Создать новый tenant
+app.post('/api/superadmin/tenants', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const { slug, name } = req.body;
+
+    if (!slug) {
+      return res.status(400).json({ error: 'slug обязателен' });
+    }
+
+    // Валидация slug (только буквы, цифры, дефис)
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return res.status(400).json({
+        error: 'slug должен содержать только строчные буквы, цифры и дефисы'
+      });
+    }
+
+    const result = await createTenant(slug, name);
+
+    res.json({
+      success: true,
+      tenant: result,
+      message: `Tenant "${slug}" успешно создан`
+    });
+  } catch (error) {
+    console.error('Create tenant error:', error);
+    res.status(500).json({
+      error: 'Ошибка создания tenant',
+      message: error.message
+    });
+  }
+});
+
+// Получить tenant по slug
+app.get('/api/superadmin/tenants/:slug', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const { slug } = req.params;
+    const tenant = await getTenantBySlug(slug);
+
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant не найден' });
+    }
+
+    res.json({
+      success: true,
+      tenant: {
+        ...tenant,
+        schema: `t_${tenant.id.replace(/-/g, '_')}`
+      }
+    });
+  } catch (error) {
+    console.error('Get tenant error:', error);
+    res.status(500).json({ error: 'Ошибка получения tenant' });
   }
 });
 

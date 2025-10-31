@@ -27,6 +27,7 @@ interface LoginResponse {
 }
 
 function SuperAdminLoginPage() {
+  console.log('🔐 SuperAdminLoginPage rendering')
   const navigate = useNavigate()
   const setAuth = useSuperAdminAuthStore((state) => state.setAuth)
 
@@ -40,7 +41,7 @@ function SuperAdminLoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginForm) => {
-      return await apiClient<LoginResponse>('/api/admin/login', {
+      return await apiClient<LoginResponse>('/api/superadmin/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       })

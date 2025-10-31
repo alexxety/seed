@@ -41,6 +41,10 @@ if (!JWT_SECRET) {
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD_HASH = bcrypt.hashSync('seed2025', 10);
 
+// SuperAdmin credentials (управление всеми магазинами)
+const SUPERADMIN_USERNAME = 'superadmin';
+const SUPERADMIN_PASSWORD_HASH = bcrypt.hashSync('super2025', 10);
+
 // Rate limiting для защиты от брутфорса
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут
@@ -63,6 +67,19 @@ app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.static('dist'));
+
+// ===========================================
+// HEALTH CHECK ENDPOINT
+// ===========================================
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'production',
+    port: PORT
+  });
+});
 
 // Middleware для проверки JWT токена
 function authenticateToken(req, res, next) {
@@ -159,6 +176,44 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Ошибка авторизации' });
+  }
+});
+
+// API endpoint для логина супер-админа
+app.post('/api/superadmin/login', loginLimiter, async (req, res) => {
+  try {
+    const { email, username, password } = req.body;
+    const login = email || username;
+
+    if (!login || !password) {
+      return res.status(400).json({ error: 'Требуется логин и пароль' });
+    }
+
+    // Проверяем учетные данные супер-админа
+    if (login !== SUPERADMIN_USERNAME) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, SUPERADMIN_PASSWORD_HASH);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    // Создаем JWT токен с истечением через 1 час
+    const token = jwt.sign(
+      { username: login, role: 'superadmin' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      expiresIn: 3600 // 1 час в секундах
+    });
+  } catch (error) {
+    console.error('SuperAdmin login error:', error);
     res.status(500).json({ error: 'Ошибка авторизации' });
   }
 });
@@ -839,6 +894,42 @@ app.get('*', (req, res) => {
   }
 })();
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Start server
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
+  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+});
+
+// Graceful shutdown handler
+function gracefulShutdown(signal) {
+  console.log(`\n⚠️  Received ${signal}, starting graceful shutdown...`);
+
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+
+    // Close database connections
+    process.exit(0);
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('❌ Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+}
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });

@@ -42,7 +42,7 @@ jobs:
           # Sync dist files (HTML, CSS, JS assets) - includes React SPA
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" dist/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/dist/
           # Sync server files
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js cloudflare-service.js ecosystem.config.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
           # Sync Prisma files
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/prisma/
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
@@ -50,11 +50,14 @@ jobs:
       - name: Set environment variables on server
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
+          NODE_ENV=production
           PORT=3000
           TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           DATABASE_URL=\"postgresql://seedshop:seedshop_secure_password_2025@localhost:5432/seedshop\"
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
           ENV_EOF
           "
 
@@ -62,23 +65,10 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npm rebuild bcrypt && npx prisma generate"
 
-      - name: Create PM2 ecosystem config
+      - name: Create PM2 log directory
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/ecosystem.config.js << 'EOF'
-          module.exports = {
-            apps: [{
-              name: 'telegram-shop',
-              script: './server.js',
-              env_file: '.env',
-              instances: 1,
-              autorestart: true,
-              watch: false,
-              max_memory_restart: '1G'
-            }]
-          };
-          EOF
-          "
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "mkdir -p /var/log/pm2"
 
-      - name: Restart server
+      - name: Restart production server with zero downtime
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload telegram-shop-prod || pm2 start ecosystem.config.js --only telegram-shop-prod"

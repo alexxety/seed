@@ -47,7 +47,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".products (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(255) NOT NULL,
         description TEXT,
         vendor VARCHAR(255),
@@ -64,7 +64,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".product_variants (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         product_id UUID NOT NULL REFERENCES "${schemaName}".products(id) ON DELETE CASCADE,
         sku VARCHAR(100) UNIQUE,
         title VARCHAR(255) NOT NULL,
@@ -84,7 +84,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".prices (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         variant_id UUID NOT NULL REFERENCES "${schemaName}".product_variants(id) ON DELETE CASCADE,
         currency VARCHAR(10) NOT NULL DEFAULT 'USD',
         amount DECIMAL(10,2) NOT NULL,
@@ -100,7 +100,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".inventory (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         variant_id UUID NOT NULL REFERENCES "${schemaName}".product_variants(id) ON DELETE CASCADE,
         quantity INTEGER NOT NULL DEFAULT 0,
         reserved INTEGER NOT NULL DEFAULT 0,
@@ -115,7 +115,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".customers (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         email VARCHAR(255),
         phone VARCHAR(50),
         full_name VARCHAR(255),
@@ -132,7 +132,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".orders (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         order_number VARCHAR(50) UNIQUE NOT NULL,
         customer_id UUID REFERENCES "${schemaName}".customers(id) ON DELETE SET NULL,
         total DECIMAL(10,2) NOT NULL,
@@ -153,7 +153,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".order_items (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         order_id UUID NOT NULL REFERENCES "${schemaName}".orders(id) ON DELETE CASCADE,
         variant_id UUID REFERENCES "${schemaName}".product_variants(id) ON DELETE SET NULL,
         product_name VARCHAR(255) NOT NULL,
@@ -170,7 +170,7 @@ async function createTenant(slug, name = null) {
     // ============================================
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "${schemaName}".outbox (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         event_type VARCHAR(100) NOT NULL,
         aggregate_type VARCHAR(50) NOT NULL,
         aggregate_id UUID NOT NULL,

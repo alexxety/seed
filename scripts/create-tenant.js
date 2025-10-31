@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 require('dotenv').config();
 
-const { createTenant } = require('../server/src/db/tenants');
+const { createTenant } = require('../server/src/db/tenants.js');
 
 async function main() {
   const args = process.argv.slice(2);

@@ -18,9 +18,9 @@ const {
 const { createShopDNS, deleteShopDNS, checkSubdomainAvailability } = require('./cloudflare-service');
 
 // Multitenancy functions
-const { createTenant, getAllTenants, getTenantBySlug, getTenantById } = require('./server/src/db/tenants');
-const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context');
-const { autoSetSearchPath } = require('./server/src/multitenancy/middleware');
+const { createTenant, getAllTenants, getTenantBySlug, getTenantById } = require('./server/src/db/tenants.js');
+const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context.js');
+const { attachTenantDB } = require('./server/src/multitenancy/middleware.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,7 +75,8 @@ app.use(express.static('dist'));
 
 // Tenant context middleware (определяет tenant по поддомену/заголовку)
 app.use(setTenantContext);
-app.use(autoSetSearchPath);
+// Создаёт req.db с правильным search_path через транзакции
+app.use(attachTenantDB);
 
 // ===========================================
 // HEALTH CHECK ENDPOINT

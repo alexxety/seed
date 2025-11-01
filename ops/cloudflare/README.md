@@ -45,6 +45,14 @@ We use **two separate API tokens** for different operations to follow the princi
   - `cf-cache-status` header shows cache behavior
   - Should show `BYPASS` or `DYNAMIC` for `/robots.txt` and `/sitemap.xml` (both mean NOT cached)
 
+## SEO Endpoints Implementation
+
+The application correctly returns proper Content-Type headers:
+- `/robots.txt`: `text/plain; charset=utf-8`
+- `/sitemap.xml`: `application/xml; charset=utf-8`
+
+These endpoints are tenant-aware and dynamically generated based on subdomain.
+
 ## Current Cache Rules
 
 The following cache rules are applied to **Proxied subdomains only**:
@@ -84,8 +92,11 @@ To apply or update cache rules manually:
 
 This will:
 - Apply cache rules to Cloudflare
-- Purge cache for SEO endpoints (robots.txt, sitemap.xml)
+- **Automatically perform targeted purge** for SEO endpoints (testshop.x-bro.com)
 - Verify the rules are active
+- Test cache status on live domains
+
+**Important**: Targeted purge is executed automatically in the `apply-cache-rules` job to ensure new rules take effect immediately.
 
 ### Automatic Triggers
 

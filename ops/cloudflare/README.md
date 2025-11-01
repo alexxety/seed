@@ -43,7 +43,7 @@ We use **two separate API tokens** for different operations to follow the princi
   - Traffic goes through Cloudflare proxy
   - Cache rules apply to this subdomain
   - `cf-cache-status` header shows cache behavior
-  - Should show `BYPASS` for `/robots.txt` and `/sitemap.xml`
+  - Should show `BYPASS` or `DYNAMIC` for `/robots.txt` and `/sitemap.xml` (both mean NOT cached)
 
 ## Current Cache Rules
 
@@ -99,12 +99,12 @@ The workflow also runs automatically on:
 After applying rules, verify they work correctly:
 
 ```bash
-# testshop.x-bro.com (Proxied - should show BYPASS)
+# testshop.x-bro.com (Proxied - should show BYPASS or DYNAMIC)
 curl -I https://testshop.x-bro.com/robots.txt | grep -i cf-cache-status
-# Expected: cf-cache-status: BYPASS (or MISS on first request)
+# Expected: cf-cache-status: BYPASS or DYNAMIC (both mean NOT cached)
 
 curl -I https://testshop.x-bro.com/sitemap.xml | grep -i cf-cache-status
-# Expected: cf-cache-status: BYPASS (or MISS on first request)
+# Expected: cf-cache-status: BYPASS or DYNAMIC (both mean NOT cached)
 
 # demo.x-bro.com (DNS only - no CF headers)
 curl -I https://demo.x-bro.com/robots.txt | grep -i server
@@ -115,10 +115,12 @@ curl -I https://demo.x-bro.com/robots.txt | grep -i server
 ### Understanding Cache Status Headers
 
 - **`BYPASS`**: Rule is working, request bypasses cache ✅
+- **`DYNAMIC`**: Content not cached (bypass rules working correctly) ✅
 - **`MISS`**: First request after purge, not in cache yet (rule will apply) ✅
 - **`HIT`**: Served from cache (rule NOT working) ❌
-- **`DYNAMIC`**: Not cacheable (might indicate rule not applied) ⚠️
 - **No header**: DNS only mode (expected for demo) ✅
+
+**Important**: `DYNAMIC` and `BYPASS` both indicate successful cache bypass. Cloudflare shows `DYNAMIC` when the content-type suggests dynamic content (e.g., HTML). Since the current server implementation returns `text/html` for robots.txt/sitemap.xml (separate issue), Cloudflare correctly classifies them as dynamic and does NOT cache them - which is exactly what we want.
 
 ## Manual Cache Purge
 
@@ -128,6 +130,26 @@ If you need to purge cache for specific URLs without running the full workflow:
 
 1. Trigger the workflow with `workflow_dispatch`
 2. The `purge-cache` job will automatically run after rules are applied
+
+### Using Server .env (Direct access)
+
+If you have SSH access to the server:
+
+```bash
+ssh root@46.224.19.173
+cd /var/www/telegram-shop-dev
+set -a; source .env; set +a
+
+curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data '{"files":[
+    "https://testshop.x-bro.com/robots.txt",
+    "https://testshop.x-bro.com/sitemap.xml"
+  ]}' | grep -o '"success":[^,]*'
+```
+
+This will show `"success":true` if purge completed successfully.
 
 ### Using curl (for debugging)
 
@@ -171,6 +193,12 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache"
 4. **Wait for propagation**
    - Cache rules can take 1-2 minutes to propagate globally
    - Try again after a few minutes
+
+5. **Perform targeted purge after rule changes**
+   - After updating cache rules, existing cached content won't be affected
+   - Always run targeted purge to force new rules to apply immediately
+   - The workflow includes automatic purge job when triggered via `workflow_dispatch`
+   - Or purge manually via server (see Manual Cache Purge section)
 
 ### demo.x-bro.com not showing BYPASS
 

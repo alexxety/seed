@@ -133,12 +133,42 @@ jobs:
             exit 1
           fi
 
+      - name: Targeted Purge (robots/sitemap)
+        env:
+          CF_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "🧹 Performing targeted purge for SEO endpoints..."
+          echo ""
+
+          RESPONSE=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_PURGE_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "files": [
+                "https://testshop.x-bro.com/robots.txt",
+                "https://testshop.x-bro.com/sitemap.xml"
+              ]
+            }')
+
+          SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+
+          if [ "$SUCCESS" = "true" ]; then
+            echo "✅ Targeted purge completed"
+            echo "   Purged: testshop.x-bro.com/robots.txt + sitemap.xml"
+          else
+            echo "⚠️  Purge failed (non-fatal)"
+            echo "$RESPONSE" | jq -r '.errors[]? | "  - [\(.code)] \(.message)"'
+          fi
+          echo ""
+
       - name: Test Cache Status
         run: |
           echo "🧪 Testing cache status on live domains..."
           echo ""
 
-          echo "📌 testshop.x-bro.com (Proxied - should show BYPASS):"
+          echo "📌 testshop.x-bro.com (Proxied - should show BYPASS or DYNAMIC):"
           echo "   /robots.txt:"
           curl -sI https://testshop.x-bro.com/robots.txt | grep -i "cf-cache-status" || echo "   No cf-cache-status header (checking...)"
           echo ""
@@ -153,8 +183,8 @@ jobs:
 
           echo "✅ Cache status test completed"
           echo ""
-          echo "Note: If cf-cache-status shows MISS or HIT instead of BYPASS,"
-          echo "      run the purge-cache job to clear existing cache."
+          echo "Note: Targeted purge was executed above."
+          echo "      DYNAMIC or BYPASS status = content NOT cached (working correctly)."
 
   purge-cache:
     name: Purge SEO Endpoints Cache

@@ -18,7 +18,7 @@ const {
 const { createShopDNS, deleteShopDNS, checkSubdomainAvailability } = require('./cloudflare-service');
 
 // Multitenancy functions
-const { createTenant, getAllTenants, getTenantBySlug, getTenantById } = require('./server/src/db/tenants.js');
+const { createTenant, getAllTenants, getTenantBySlug, getTenantById, getAllTenantsAsShops } = require('./server/src/db/tenants.js');
 const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context.js');
 const { attachTenantDB } = require('./server/src/multitenancy/middleware.js');
 
@@ -71,7 +71,11 @@ const apiLimiter = rateLimit({
 app.set('trust proxy', 1);
 
 app.use(express.json());
-app.use(express.static('dist'));
+app.use(express.static('public')); // Для assets (логотипы и т.д.)
+
+// Configure EJS for storefront views
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'server/src/storefront/views'));
 
 // Tenant context middleware (определяет tenant по поддомену/заголовку)
 app.use(setTenantContext);
@@ -314,6 +318,27 @@ app.get('/api/superadmin/tenants/:slug', authenticateToken, async (req, res) => 
   } catch (error) {
     console.error('Get tenant error:', error);
     res.status(500).json({ error: 'Ошибка получения tenant' });
+  }
+});
+
+// ===========================================
+// SUPERADMIN SHOPS API (Legacy Compatibility)
+// ===========================================
+
+// Получить список магазинов (tenants в формате shops для совместимости с frontend)
+app.get('/api/superadmin/shops', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const { status, orderBy, order } = req.query;
+    const shops = await getAllTenantsAsShops({ status, orderBy, order });
+
+    res.json({ success: true, shops });
+  } catch (error) {
+    console.error('Get shops error:', error);
+    res.status(500).json({ error: 'Ошибка получения списка магазинов' });
   }
 });
 
@@ -979,7 +1004,37 @@ app.delete('/api/admin/shops/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// ===========================================
+// STOREFRONT (Tenant-aware shop pages)
+// ===========================================
+// Обслуживает публичную витрину магазина
+// Использует req.tenantSlug и req.db (настроены middleware выше)
+const storefrontRouter = require('./server/src/storefront/router');
+
+// Применяем storefront только для tenant requests (не для admin/API)
+app.use((req, res, next) => {
+  // Пропускаем служебные URL
+  if (req.path.startsWith('/api/') ||
+      req.path.startsWith('/admin/') ||
+      req.path.startsWith('/superadmin/') ||
+      req.path.startsWith('/assets/')) {
+    return next();
+  }
+
+  // Если есть tenant - обслуживаем через storefront
+  if (req.context && req.context.tenant) {
+    return storefrontRouter(req, res, next);
+  }
+
+  // Нет tenant - идём в SPA fallback
+  next();
+});
+
+// Статика dist только для non-tenant requests (админка)
+app.use(express.static('dist'));
+
 // SPA fallback - все неизвестные маршруты возвращают index.html
+// (только для запросов без tenant context - админка, главная и т.д.)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });

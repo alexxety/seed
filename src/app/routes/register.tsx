@@ -76,7 +76,7 @@ function RegisterPage() {
           available: result.available,
           error: result.error || null,
         })
-      } catch (error) {
+      } catch {
         setSubdomainStatus({
           checking: false,
           available: false,

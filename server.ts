@@ -30,13 +30,11 @@ import {
   getAllSettings,
   getSettingsByCategory,
   getSetting,
-  getSettingValue,
   updateSetting,
   updateSettings,
   initializeSettings,
   createShop,
   getAllShops,
-  getShopBySubdomain,
   getShopById,
   updateShop,
   updateShopStatus,
@@ -44,16 +42,15 @@ import {
   isSubdomainAvailable,
 } from './database';
 
-import { createShopDNS, deleteShopDNS, checkSubdomainAvailability } from './cloudflare-service';
+import { createShopDNS, deleteShopDNS } from './cloudflare-service';
 
 import {
   createTenant,
   getAllTenants,
   getTenantBySlug,
-  getTenantById,
   getAllTenantsAsShops,
 } from './server/src/db/tenants';
-import { setTenantContext, requireTenant } from './server/src/multitenancy/tenant-context';
+import { setTenantContext } from './server/src/multitenancy/tenant-context';
 import { attachTenantDB, getGlobalPrisma } from './server/src/multitenancy/middleware';
 
 import storefrontRouter from './server/src/storefront/router';

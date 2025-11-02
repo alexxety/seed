@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import type { Product, ProductFormData } from '@/types'
+import type { ProductFormData } from '@/types'
 import { useAdminAuthStore } from '../auth/store'
 
 function getAuthHeaders() {

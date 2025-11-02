@@ -46,7 +46,7 @@ function CheckoutPage() {
         to: '/success/$orderNumber',
         params: { orderNumber: result.orderNumber },
       })
-    } catch (error) {
+    } catch {
       alert('Ошибка при оформлении заказа')
     }
   }

@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useTelegram, useTelegramTheme } from '@/lib/telegram'
+// import { useTelegram, useTelegramTheme } from '@/lib/telegram'
 
 const queryClient = new QueryClient({
   defaultOptions: {

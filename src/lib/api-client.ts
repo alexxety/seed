@@ -7,7 +7,7 @@ export class ApiError extends Error {
 
 export async function apiClient<T>(
   url: string,
-  options?: RequestInit
+  options?: Parameters<typeof fetch>[1]
 ): Promise<T> {
   const response = await fetch(url, {
     ...options,

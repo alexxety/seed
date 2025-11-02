@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
 import { useSuperAdminAuthStore } from '@/features/superadmin/store'
 import { getAllShops, updateShopStatus, deleteShop, type Shop } from '@/features/superadmin/api'
 import { Button } from '@/components/ui/button'

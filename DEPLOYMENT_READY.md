@@ -9,20 +9,21 @@
 
 ## ✅ Локальная проверка завершена
 
-| Задача | Статус | Результат |
-|--------|--------|-----------|
-| Миграция проверена | ✅ | Синтаксис валиден, uuid_generate_v4() |
-| UUID механизм единый | ✅ | uuid_generate_v4() во всех 9 таблицах |
-| DDL проверен | ✅ | 8 tenant-таблиц, 22 индекса, 6 FK |
-| Grep-аудит | ✅ | Нет проблемных прямых вызовов prisma |
-| Инструкции созданы | ✅ | GREEN_STATUS_REPORT.md (589 строк) |
-| Коммиты | ✅ | c69cdf3, 56bf296 (pushed) |
+| Задача               | Статус | Результат                             |
+| -------------------- | ------ | ------------------------------------- |
+| Миграция проверена   | ✅     | Синтаксис валиден, uuid_generate_v4() |
+| UUID механизм единый | ✅     | uuid_generate_v4() во всех 9 таблицах |
+| DDL проверен         | ✅     | 8 tenant-таблиц, 22 индекса, 6 FK     |
+| Grep-аудит           | ✅     | Нет проблемных прямых вызовов prisma  |
+| Инструкции созданы   | ✅     | GREEN_STATUS_REPORT.md (589 строк)    |
+| Коммиты              | ✅     | c69cdf3, 56bf296 (pushed)             |
 
 ---
 
 ## 🎉 LIVE TEST RESULTS (Dev Server)
 
 ### ✅ 1. Migration Deployed
+
 ```
 Prisma schema loaded from prisma/schema.prisma
 Datasource "db": PostgreSQL database "seedshop_dev"
@@ -32,9 +33,11 @@ Applying migration `20251031161635_add_tenants_table`
 ```
 
 ### ✅ 2. Server Running
+
 ```bash
 curl https://dev.x-bro.com/health
 ```
+
 ```json
 {
   "status": "ok",
@@ -46,9 +49,11 @@ curl https://dev.x-bro.com/health
 ```
 
 ### ✅ 3. Demo Tenant Created
+
 ```bash
 npm run create:tenant demo "Demo Shop"
 ```
+
 ```
 🚀 Создание нового tenant: demo
 ✅ Tenant создан: ID=330b51d2-3baa-4f50-bc14-be9e836fdc64
@@ -59,11 +64,13 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 ### ✅ 4. API Login Working
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
   -H "Content-Type: application/json" \
   -d '{"username":"superadmin","password":"super2025"}'
 ```
+
 ```json
 {
   "success": true,
@@ -73,10 +80,12 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
 ```
 
 ### ✅ 5. Tenants List Working
+
 ```bash
 curl https://dev-admin.x-bro.com/api/superadmin/tenants \
   -H "Authorization: Bearer <TOKEN>"
 ```
+
 ```json
 {
   "success": true,
@@ -93,11 +102,13 @@ curl https://dev-admin.x-bro.com/api/superadmin/tenants \
 ```
 
 ### ✅ 6. Tenant Creation via API
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
   -H "Authorization: Bearer <TOKEN>" \
   -d '{"slug":"testshop","name":"Test Shop"}'
 ```
+
 ```json
 {
   "success": true,
@@ -111,10 +122,12 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
 ```
 
 ### ✅ 7. Database Structure Verified
+
 ```sql
 -- Tenants in public schema
 SELECT id, slug, status FROM public.tenants;
 ```
+
 ```
 330b51d2-3baa-4f50-bc14-be9e836fdc64 | demo     | active
 2961abd8-68b1-48fe-82f6-d09b8b6eccc0 | testshop | active
@@ -124,6 +137,7 @@ SELECT id, slug, status FROM public.tenants;
 -- Tenant schemas created
 SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 't_%';
 ```
+
 ```
 t_2961abd8_68b1_48fe_82f6_d09b8b6eccc0
 t_330b51d2_3baa_4f50_bc14_be9e836fdc64
@@ -134,16 +148,20 @@ t_330b51d2_3baa_4f50_bc14_be9e836fdc64
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 't_330b51d2_3baa_4f50_bc14_be9e836fdc64';
 ```
+
 ```
 customers | inventory | order_items | orders
 outbox | prices | product_variants | products
 ```
+
 **✅ All 8 tables created**
 
 ### ✅ 8. UUID Mechanism Verified
+
 ```sql
 \d t_330b51d2_3baa_4f50_bc14_be9e836fdc64.products
 ```
+
 ```
 id | uuid | not null | uuid_generate_v4()  ✅
 
@@ -159,10 +177,12 @@ Referenced by:
 ```
 
 ### ✅ 9. All Indexes Created
+
 ```sql
 SELECT COUNT(*) FROM pg_indexes
 WHERE schemaname = 't_330b51d2_3baa_4f50_bc14_be9e836fdc64';
 ```
+
 ```
 32 indexes (22 custom + PKs + unique constraints)
 ```
@@ -172,6 +192,7 @@ WHERE schemaname = 't_330b51d2_3baa_4f50_bc14_be9e836fdc64';
 ## 📦 Что готово в коде
 
 ### 1. Multitenancy Core
+
 - ✅ `server/src/db/tenants.js` - создание tenant + схема + 8 таблиц
 - ✅ `server/src/multitenancy/middleware.js` - req.db с SET LOCAL
 - ✅ `server/src/multitenancy/tenant-context.js` - определение tenant
@@ -179,6 +200,7 @@ WHERE schemaname = 't_330b51d2_3baa_4f50_bc14_be9e836fdc64';
 - ✅ `prisma/migrations/` - миграция tenants table
 
 ### 2. API Endpoints
+
 - ✅ `POST /api/superadmin/login` - JWT токен
 - ✅ `GET /api/superadmin/tenants` - список tenants
 - ✅ `POST /api/superadmin/tenants` - создать tenant
@@ -186,10 +208,12 @@ WHERE schemaname = 't_330b51d2_3baa_4f50_bc14_be9e836fdc64';
 - ✅ `GET /api/superadmin/shops` - список магазинов (tenants в формате shops для совместимости)
 
 ### 3. CLI Tools
+
 - ✅ `scripts/create-tenant.js` - создание tenant через npm
 - ✅ `npm run create:tenant <slug> [name]`
 
 ### 4. Tenant Schema (8 таблиц)
+
 ```
 t_{uuid}/
 ├── products (8 полей, 3 индекса)
@@ -220,6 +244,7 @@ pm2 logs telegram-shop-dev --lines 50
 ```
 
 **Ожидается**:
+
 ```
 ✅ ENV валидация прошла успешно
 🌐 Запрос к инфраструктуре (без tenant)
@@ -234,6 +259,7 @@ curl https://dev.x-bro.com/health
 ```
 
 **Ожидается**:
+
 ```json
 {
   "status": "ok",
@@ -251,8 +277,9 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 **Ожидается**:
+
 - ✅ Tenant создан в public.tenants
-- ✅ Схема t_{uuid} создана
+- ✅ Схема t\_{uuid} создана
 - ✅ 8 таблиц созданы
 - ✅ 22 индекса созданы
 - ✅ 6 foreign keys установлены
@@ -264,6 +291,7 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 **Тесты**:
+
 1. ✅ Логин супер-админа
 2. ✅ Список tenants
 3. ✅ Создание tenant
@@ -283,13 +311,13 @@ Proxy: ON
 
 ## 📝 Детальная документация
 
-| Файл | Описание |
-|------|----------|
+| Файл                       | Описание                             |
+| -------------------------- | ------------------------------------ |
 | **GREEN_STATUS_REPORT.md** | Полная инструкция деплоя (589 строк) |
-| **TENANCY_FIXES.md** | Детали всех критических исправлений |
-| **FIXES_SUMMARY.md** | Краткое резюме исправлений |
-| **MULTITENANCY.md** | Общая документация системы |
-| **API_EXAMPLES.sh** | Curl примеры для всех endpoints |
+| **TENANCY_FIXES.md**       | Детали всех критических исправлений  |
+| **FIXES_SUMMARY.md**       | Краткое резюме исправлений           |
+| **MULTITENANCY.md**        | Общая документация системы           |
+| **API_EXAMPLES.sh**        | Curl примеры для всех endpoints      |
 
 ---
 
@@ -315,6 +343,7 @@ Proxy: ON
 ## 🎓 Ключевые улучшения
 
 ### До (ПРОБЛЕМЫ):
+
 ```javascript
 // ❌ SET search_path вне транзакции
 app.use(autoSetSearchPath);
@@ -327,11 +356,12 @@ const products = await prisma.product.findMany();
 require('./server/src/db/tenants'); // .ts file
 
 // ❌ UUID несоответствие
-gen_random_uuid() // в DDL
-uuid_generate_v4() // в миграции
+gen_random_uuid(); // в DDL
+uuid_generate_v4(); // в миграции
 ```
 
 ### После (РЕШЕНО):
+
 ```javascript
 // ✅ req.db с SET LOCAL в транзакции
 app.use(attachTenantDB);
@@ -343,7 +373,7 @@ const products = await req.db.product.findMany();
 require('./server/src/db/tenants.js'); // .js file
 
 // ✅ UUID единый стандарт
-uuid_generate_v4() // везде
+uuid_generate_v4(); // везде
 ```
 
 ---
@@ -351,10 +381,12 @@ uuid_generate_v4() // везде
 ## 📊 Статистика
 
 **Коммиты**:
+
 - `c69cdf3` - критические исправления (TS→JS, UUID, SET LOCAL)
 - `56bf296` - документация
 
 **Изменения**:
+
 - 8 files changed
 - 936 insertions(+)
 - 77 deletions(-)
@@ -396,12 +428,14 @@ DEPLOY
 ## ✅ Итог
 
 ### Локально выполнено:
+
 - ✅ Все критические проблемы исправлены
 - ✅ Код проверен и валиден
 - ✅ Документация создана
 - ✅ Коммиты запушены
 
 ### Выполнено на dev сервере:
+
 - ✅ Миграция применена (public.tenants table)
 - ✅ Demo tenant создан (t_330b51d2...)
 - ✅ Testshop tenant создан через API (t_2961abd8...)
@@ -427,6 +461,7 @@ DEPLOY
 **Дата**: 1 ноября 2025
 
 ### Проблема
+
 Супер-админ панель "Магазины" показывала данные из legacy `/api/admin/shops` и не видела новые tenants.
 
 ### Решение (Вариант A - Совместимость)
@@ -443,16 +478,19 @@ DEPLOY
    - Добавлено отображение `slug` и `schema` в UI
 
 ### Файлы изменены
+
 - `server/src/db/tenants.js` - добавлена функция `getAllTenantsAsShops()`
 - `server.js` - добавлен endpoint `GET /api/superadmin/shops`
 - `src/features/superadmin/api.ts` - обновлён endpoint и тип Shop
 - `src/app/routes/superadmin/_superadmin/shops.tsx` - обновлено отображение
 
 ### Тест результат
+
 ```bash
 curl -s https://dev-admin.x-bro.com/api/superadmin/shops \
   -H "Authorization: Bearer <TOKEN>" | jq '.shops | length'
 ```
+
 **Результат**: `2` (demo + testshop)
 
 ```json
@@ -494,6 +532,7 @@ curl -s https://dev-admin.x-bro.com/api/superadmin/shops \
 ```
 
 ### Что показывает UI
+
 - ✅ Список всех tenants в виде магазинов
 - ✅ Статистика: активные, заблокированные, ожидающие
 - ✅ Информация о владельце (заполнено "—" для новых tenants)
@@ -509,17 +548,21 @@ curl -s https://dev-admin.x-bro.com/api/superadmin/shops \
 **Дата**: 1 ноября 2025
 
 ### Проблема
+
 SSL сертификат покрывал только `x-bro.com`, но не `*.x-bro.com`, что приводило к ошибкам HTTPS для tenant доменов (demo.x-bro.com, testshop.x-bro.com и т.д.).
 
 ### Решение
+
 Получен новый wildcard SSL сертификат через Let's Encrypt с использованием DNS-01 challenge:
 
 1. **Установлен certbot-dns-cloudflare плагин**
+
    ```bash
    apt-get install python3-certbot-dns-cloudflare
    ```
 
 2. **Создан credentials файл для Cloudflare**
+
    ```bash
    mkdir -p /root/.secrets
    echo "dns_cloudflare_api_token = $CLOUDFLARE_API_TOKEN" > /root/.secrets/cloudflare.ini
@@ -543,6 +586,7 @@ SSL сертификат покрывал только `x-bro.com`, но не `*
 ### Результат
 
 **Сертификат успешно получен**:
+
 - Certificate: `/etc/letsencrypt/live/x-bro.com/fullchain.pem`
 - Private Key: `/etc/letsencrypt/live/x-bro.com/privkey.pem`
 - Expires: **29 января 2026**
@@ -572,6 +616,7 @@ curl -I https://dev.x-bro.com
 ### DNS конфигурация
 
 **Wildcard DNS запись** в Cloudflare:
+
 ```
 Type: A
 Name: *
@@ -580,6 +625,7 @@ Proxy: DNS only (серое облачко) ⚪
 ```
 
 Благодаря wildcard записи:
+
 - Любой новый tenant автоматически резолвится на сервер
 - Не нужно создавать отдельные DNS записи для каждого tenant
 - SSL сертификат покрывает все поддомены `*.x-bro.com`
@@ -587,6 +633,7 @@ Proxy: DNS only (серое облачко) ⚪
 ### Nginx конфигурация
 
 Wildcard server block в `/etc/nginx/sites-available/x-bro`:
+
 ```nginx
 server {
     listen 443 ssl http2;
@@ -663,11 +710,13 @@ CREATE TABLE store_settings (
 ### Темы магазинов
 
 **Demo Shop** (demo.x-bro.com):
+
 - Цвет: `#0ea5e9` (Sky Blue)
 - Логотип: Синий квадрат с буквой "D"
 - Товары: Электроника (наушники, смарт-часы, клавиатура, подставка для ноутбука)
 
 **Test Shop** (testshop.x-bro.com):
+
 - Цвет: `#16a34a` (Green)
 - Логотип: Зелёный квадрат с буквой "T"
 - Товары: Органические продукты (кофе, коврик для йоги, бутылка)
@@ -732,17 +781,20 @@ app.get('*', (req, res) => {
 ### Как добавить новый магазин
 
 1. **Создать tenant**:
+
 ```bash
 npm run create:tenant myshop "My Shop"
 ```
 
 2. **Добавить настройки темы**:
+
 ```sql
 INSERT INTO t_{uuid}.store_settings (title, brand_color, logo_path, currency)
 VALUES ('My Shop', '#ff6b6b', '/assets/tenants/myshop/logo.png', 'USD');
 ```
 
 3. **Добавить товары**:
+
 ```sql
 -- Создать product
 INSERT INTO t_{uuid}.products (name, description, category, is_active)
@@ -760,6 +812,7 @@ VALUES ('{variant_id}', 'USD', 99.99, true);
 ```
 
 4. **Создать логотип**:
+
 ```bash
 # Добавить файл в public/assets/tenants/myshop/logo.png
 ```
@@ -794,6 +847,7 @@ psql $DATABASE_URL -c "SELECT * FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.stor
 ### Файлы
 
 **Созданные файлы**:
+
 - `server/src/storefront/views/*.ejs` (4 шаблона)
 - `server/src/storefront/router.js` (роутер)
 - `server/src/storefront/service.js` (бизнес-логика)
@@ -802,6 +856,7 @@ psql $DATABASE_URL -c "SELECT * FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.stor
 - `public/assets/tenants/*/logo.png` (логотипы)
 
 **Обновлённые файлы**:
+
 - `server.js` (EJS + storefront router)
 - `server/src/db/tenants.js` (добавлена store_settings таблица)
 - `package.json` (добавлен ejs)
@@ -822,6 +877,7 @@ psql $DATABASE_URL -c "SELECT * FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.stor
 **Проблема**: `express.static('dist')` перехватывал все запросы до storefront router, возвращал SPA HTML вместо EJS.
 
 **Решение** в server.js:
+
 ```javascript
 // ❌ ДО: static перед storefront
 app.use(express.static('dist'));
@@ -835,6 +891,7 @@ app.use(express.static('dist')); // Только для non-tenant запрос�
 #### 2. Tenant Detection улучшен
 
 **Добавлено логирование** в service.js и router.js:
+
 ```javascript
 const tenantSlug = req.context?.tenant?.slug || 'unknown';
 console.log(`[listProducts] [${tenantSlug}] page=${page}, size=${size}`);
@@ -845,6 +902,7 @@ console.log(`[listProducts] [${tenantSlug}] page=${page}, size=${size}`);
 #### 3. Pagination с ограничениями
 
 **Реализовано** в service.js:
+
 ```javascript
 // Нормализация: page ∈ [1..100000], size ∈ [1..100]
 page = Math.max(1, Math.min(100000, page));
@@ -854,6 +912,7 @@ size = Math.max(1, Math.min(100, size)); // default 20
 #### 4. Themed 404 Pages
 
 **Добавлено** в router.js:
+
 - 404 страница с цветом из settings.brand_color
 - Кнопка "Back to Shop" с tenant theme
 - Название магазина из settings.title
@@ -861,57 +920,80 @@ size = Math.max(1, Math.min(100, size)); // default 20
 #### 5. Auto-create store_settings
 
 **Обновлено** в tenants.js - функция createTenant():
+
 ```javascript
 // Генерация brand_color на основе slug
 const brandColors = {
-  demo: '#0ea5e9',     // Sky blue
+  demo: '#0ea5e9', // Sky blue
   testshop: '#16a34a', // Green
-  seed: '#f59e0b',     // Amber
+  seed: '#f59e0b', // Amber
 };
 const defaultBrandColor = brandColors[slug] || '#6366f1'; // Indigo
 
 // Автоматическое создание store_settings
-await prisma.$executeRawUnsafe(`
+await prisma.$executeRawUnsafe(
+  `
   INSERT INTO "${schemaName}".store_settings (title, brand_color, logo_path, currency)
   VALUES ($1, $2, $3, $4)
-`, title, defaultBrandColor, `/assets/tenants/${slug}/logo.png`, 'USD');
+`,
+  title,
+  defaultBrandColor,
+  `/assets/tenants/${slug}/logo.png`,
+  'USD'
+);
 ```
 
 ### Тестирование с X-Tenant заголовком
 
 **Demo Shop** (localhost:3001):
+
 ```bash
 curl -s http://localhost:3001/ -H "X-Tenant: demo" | grep -E "title|brand_color"
 ```
+
 ```html
 <title>Demo Shop</title>
-<style>:root { --brand-color: #0ea5e9; }</style>
+<style>
+  :root {
+    --brand-color: #0ea5e9;
+  }
+</style>
 ```
 
 **Test Shop** (localhost:3001):
+
 ```bash
 curl -s http://localhost:3001/ -H "X-Tenant: testshop" | grep -E "title|brand_color"
 ```
+
 ```html
 <title>Test Shop</title>
-<style>:root { --brand-color: #16a34a; }</style>
+<style>
+  :root {
+    --brand-color: #16a34a;
+  }
+</style>
 ```
 
 ### Проверка каталогов
 
 **Demo Products**:
+
 ```bash
 curl -s http://localhost:3001/products -H "X-Tenant: demo" | grep "product-card"
 ```
+
 - Premium Headphones ($299.99)
 - Smart Watch ($199.99)
 - Mechanical Keyboard ($149.99)
 - Laptop Stand ($49.99)
 
 **Test Shop Products**:
+
 ```bash
 curl -s http://localhost:3001/products -H "X-Tenant: testshop" | grep "product-card"
 ```
+
 - Organic Coffee Beans ($24.99)
 - Yoga Mat ($39.99)
 - Stainless Steel Water Bottle ($29.99)
@@ -921,22 +1003,27 @@ curl -s http://localhost:3001/products -H "X-Tenant: testshop" | grep "product-c
 ### SEO Endpoints
 
 **robots.txt**:
+
 ```bash
 curl -s http://localhost:3001/robots.txt -H "X-Tenant: demo" -i | grep "Content-Type"
 ```
+
 ```
 Content-Type: text/plain; charset=utf-8 ✅
 ```
 
 **sitemap.xml**:
+
 ```bash
 curl -s http://localhost:3001/sitemap.xml -H "X-Tenant: demo" -i | grep "Content-Type"
 ```
+
 ```
 Content-Type: application/xml; charset=utf-8 ✅
 ```
 
 Content includes tenant-specific URLs:
+
 ```xml
 <loc>https://demo/</loc>
 <loc>https://demo/products</loc>
@@ -946,28 +1033,35 @@ Content includes tenant-specific URLs:
 ### Grep Checks
 
 **1. Глобальные prisma вызовы**:
+
 ```bash
 grep -R "prisma\." -n server/src | grep -vE "req\.db|db/tenants|PrismaClient|extends"
 ```
+
 ```
 server/src/multitenancy/middleware.js:25: const [, result] = await prisma.$transaction([
 server/src/multitenancy/middleware.js:26:   prisma.$executeRawUnsafe(`SET LOCAL search_path...
 server/src/multitenancy/middleware.js:75: return await prisma.$transaction(async (tx) => {
 ```
+
 ✅ **Только middleware.js** - это легитимные вызовы для создания tenant-scoped clients
 
 **2. gen_random_uuid в storefront/db**:
+
 ```bash
 grep -R "gen_random_uuid" -n server/src/storefront server/src/db
 ```
+
 ```
 (no output)
 ```
+
 ✅ **Нет gen_random_uuid** - используем uuid_generate_v4()
 
 ### Архитектура
 
 **Tenant Resolution**:
+
 ```
 Request → resolveTenant(req)
   ↓
@@ -979,6 +1073,7 @@ Request → resolveTenant(req)
 ```
 
 **Database Access**:
+
 ```
 Request → attachTenantDB(req)
   ↓
@@ -990,6 +1085,7 @@ Request → attachTenantDB(req)
 ```
 
 **Storefront Routing**:
+
 ```
 Request → Multitenancy middleware
   ↓
@@ -1005,11 +1101,13 @@ Request → Multitenancy middleware
 ### Как добавить новый магазин
 
 **1. Создать tenant** (auto-creates store_settings):
+
 ```bash
 npm run create:tenant myshop "My Amazing Shop"
 ```
 
 **2. (Опционально) Обновить тему**:
+
 ```sql
 UPDATE t_{uuid}.store_settings
 SET brand_color = '#ff6b6b', logo_path = '/assets/tenants/myshop/logo.png'
@@ -1017,17 +1115,20 @@ WHERE id = (SELECT id FROM t_{uuid}.store_settings LIMIT 1);
 ```
 
 **3. Добавить товары**:
+
 ```bash
 # Использовать seed-storefront-data.js как пример
 node scripts/seed-storefront-data.js myshop
 ```
 
 **4. Добавить логотип** (опционально):
+
 ```bash
 # Создать public/assets/tenants/myshop/logo.png
 ```
 
 **5. Готово!** Доступ через:
+
 - **Production**: https://myshop.x-bro.com
 - **Dev**: https://myshop.x-bro.com (порт 3001)
 - **Local**: http://localhost:3001/ -H "X-Tenant: myshop"
@@ -1051,11 +1152,13 @@ public/
 ### Debugging
 
 **Проверить tenant detection**:
+
 ```bash
 curl -v http://localhost:3001/ -H "X-Tenant: demo" 2>&1 | grep -i "x-tenant"
 ```
 
 **Проверить req.db**:
+
 ```bash
 # Логи покажут:
 [listProducts] [demo] page=1, size=4, offset=0
@@ -1063,6 +1166,7 @@ curl -v http://localhost:3001/ -H "X-Tenant: demo" 2>&1 | grep -i "x-tenant"
 ```
 
 **Проверить products**:
+
 ```bash
 ssh root@46.224.19.173
 psql $DATABASE_URL
@@ -1070,22 +1174,23 @@ SELECT name, category FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.products;
 ```
 
 **Проверить store_settings**:
+
 ```bash
 SELECT title, brand_color FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.store_settings;
 ```
 
 ### Ключевые файлы
 
-| Файл | Линии | Описание |
-|------|-------|----------|
-| server/src/storefront/router.js | 262 | Express routes (/, /products, /product/:id, SEO) |
-| server/src/storefront/service.js | 233 | Business logic (themes, products, sitemap) |
-| server/src/storefront/views/layout.ejs | ~100 | Base template с CSS variables |
-| server/src/storefront/views/home.ejs | ~50 | Главная страница |
-| server/src/storefront/views/products.ejs | ~80 | Каталог с pagination |
-| server/src/storefront/views/product.ejs | ~60 | Карточка товара |
-| server/src/db/tenants.js:43-196 | 153 | DDL для store_settings + auto-insert |
-| server.js:64-87 | 24 | EJS config + storefront routing |
+| Файл                                     | Линии | Описание                                         |
+| ---------------------------------------- | ----- | ------------------------------------------------ |
+| server/src/storefront/router.js          | 262   | Express routes (/, /products, /product/:id, SEO) |
+| server/src/storefront/service.js         | 233   | Business logic (themes, products, sitemap)       |
+| server/src/storefront/views/layout.ejs   | ~100  | Base template с CSS variables                    |
+| server/src/storefront/views/home.ejs     | ~50   | Главная страница                                 |
+| server/src/storefront/views/products.ejs | ~80   | Каталог с pagination                             |
+| server/src/storefront/views/product.ejs  | ~60   | Карточка товара                                  |
+| server/src/db/tenants.js:43-196          | 153   | DDL для store_settings + auto-insert             |
+| server.js:64-87                          | 24    | EJS config + storefront routing                  |
 
 ### Итоговый статус
 
@@ -1107,6 +1212,7 @@ SELECT title, brand_color FROM t_330b51d2_3baa_4f50_bc14_be9e836fdc64.store_sett
 🟢 **Storefront ✅ FULLY CONFIRMED (demo/testshop различаются по теме и данным)**
 
 **Что работает**:
+
 - ✅ Tenant-aware routing (Host + X-Tenant header)
 - ✅ Мультитенантность (req.db с SET LOCAL search_path)
 - ✅ Разные темы (brand_color, logo, title)

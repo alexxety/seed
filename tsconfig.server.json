@@ -15,15 +15,6 @@
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": [
-    "server.ts",
-    "database.ts",
-    "cloudflare-service.ts",
-    "server/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src"
-  ]
+  "include": ["server.ts", "database.ts", "cloudflare-service.ts", "server/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src"]
 }

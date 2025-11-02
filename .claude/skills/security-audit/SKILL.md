@@ -1,10 +1,11 @@
 ---
 name: security-audit
-description: "Провести полный аудит безопасности: ENV-валидация, JWT (kid+jti), rate-limit, CORS whitelist, CSP, audit-logs, health checks, защита супер-админки."
-tags: ["security","best-practices","auth","api","saas"]
+description: 'Провести полный аудит безопасности: ENV-валидация, JWT (kid+jti), rate-limit, CORS whitelist, CSP, audit-logs, health checks, защита супер-админки.'
+tags: ['security', 'best-practices', 'auth', 'api', 'saas']
 ---
 
 # 🎯 Цель
+
 Привести проект к уровню **минимально безопасного SaaS-продукта**, чтобы:
 
 1. ❌ Не было утечек ENV/секретов
@@ -19,6 +20,7 @@ tags: ["security","best-practices","auth","api","saas"]
 # ✅ Что требуется реализовать
 
 ## 1. ENV ВАЛИДАЦИЯ
+
 `server/src/config/env.ts` (через Zod)
 
 ✔ Любая отсутствующая переменная → сервер **не стартует**
@@ -29,13 +31,13 @@ tags: ["security","best-practices","auth","api","saas"]
 
 ## 2. JWT БЕЗОПАСНОСТЬ
 
-| требование | статус |
-|------------|--------|
-| TTL ≤ 1 час | ✅ |
-| В payload → `sub`, `role`, `tenantId?`, `jti` | ✅ |
-| Поддержка `kid` (future key rotation) | ✅ |
-| Хранить **чёрный список jti** в Redis (optional) | 🔜 |
-| Супер-админ имеет свою `SIGNING_KEY_SUPERADMIN` | ✅ (другой секрет) |
+| требование                                       | статус             |
+| ------------------------------------------------ | ------------------ |
+| TTL ≤ 1 час                                      | ✅                 |
+| В payload → `sub`, `role`, `tenantId?`, `jti`    | ✅                 |
+| Поддержка `kid` (future key rotation)            | ✅                 |
+| Хранить **чёрный список jti** в Redis (optional) | 🔜                 |
+| Супер-админ имеет свою `SIGNING_KEY_SUPERADMIN`  | ✅ (другой секрет) |
 
 ---
 
@@ -59,18 +61,19 @@ server/src/middleware/requireTenant.ts
 
 Использовать `rate-limiter-flexible` + Redis.
 
-| endpoint | лимит |
-|----------|--------|
-| `/api/superadmin/login` | 5 попыток / 10 минут |
-| `/api/admin/login` | 10 попыток / 10 минут |
-| `/api/tenant/orders/:id/pay` | защита от спама |
-| `/api/billing/webhook` | не лимитировать, но логировать |
+| endpoint                     | лимит                          |
+| ---------------------------- | ------------------------------ |
+| `/api/superadmin/login`      | 5 попыток / 10 минут           |
+| `/api/admin/login`           | 10 попыток / 10 минут          |
+| `/api/tenant/orders/:id/pay` | защита от спама                |
+| `/api/billing/webhook`       | не лимитировать, но логировать |
 
 ---
 
 ## 5. CORS / CSP / HEADERS
 
 ### CORS
+
 В ENV:
 
 ```bash
@@ -89,12 +92,13 @@ frame-ancestors 'none';
 ```
 
 ### Другие заголовки
-| Header | Значение |
-|--------|----------|
-| `X-Content-Type-Options` | nosniff |
-| `X-Frame-Options` | DENY |
-| `Referrer-Policy` | no-referrer |
-| `Strict-Transport-Security` | 1 year |
+
+| Header                      | Значение    |
+| --------------------------- | ----------- |
+| `X-Content-Type-Options`    | nosniff     |
+| `X-Frame-Options`           | DENY        |
+| `Referrer-Policy`           | no-referrer |
+| `Strict-Transport-Security` | 1 year      |
 
 ---
 
@@ -102,16 +106,16 @@ frame-ancestors 'none';
 
 Создать таблицу `audit_logs`:
 
-| поле | значение |
-|------|----------|
-| id | uuid |
-| userId / superadmin? | nullable |
-| tenantId | nullable |
-| action | string (`TENANT_CREATED`, `LOGIN_FAILED`, `ORDER_PAID`, etc.) |
-| meta | jsonb |
-| ip | string |
-| userAgent | string |
-| createdAt | timestamp |
+| поле                 | значение                                                      |
+| -------------------- | ------------------------------------------------------------- |
+| id                   | uuid                                                          |
+| userId / superadmin? | nullable                                                      |
+| tenantId             | nullable                                                      |
+| action               | string (`TENANT_CREATED`, `LOGIN_FAILED`, `ORDER_PAID`, etc.) |
+| meta                 | jsonb                                                         |
+| ip                   | string                                                        |
+| userAgent            | string                                                        |
+| createdAt            | timestamp                                                     |
 
 Логировать:
 
@@ -143,28 +147,28 @@ GET /readyz    → проверяет: DB, Redis, Search, Queue
 
 ## 9. ЗАЩИТА SUPERADMIN ПАНЕЛИ
 
-| Мера | Обязательно |
-|------|-------------|
-| Отдельный JWT secret | ✅ |
-| Отдельный CORS whitelist | ✅ |
-| Ограничить IP по ENV (`SUPERADMIN_ALLOWED_IPS`) | ⚠️ желательно |
-| Обязательное 2FA (email/TOTP) | 🔜 можно позже |
-| Логирование всех действий | ✅ |
+| Мера                                            | Обязательно    |
+| ----------------------------------------------- | -------------- |
+| Отдельный JWT secret                            | ✅             |
+| Отдельный CORS whitelist                        | ✅             |
+| Ограничить IP по ENV (`SUPERADMIN_ALLOWED_IPS`) | ⚠️ желательно  |
+| Обязательное 2FA (email/TOTP)                   | 🔜 можно позже |
+| Логирование всех действий                       | ✅             |
 
 ---
 
 # 🧨 Анти-атаки чеклист
 
-| Угроза | Защита |
-|--------|--------|
-| Brute-force login | rate limit + audit |
-| JWT चोरी / reuse | jti blacklist |
-| SSRF | запрет внешних fetch кроме allowlist |
-| Webhook replay | eventId + table `webhook_events` |
-| Tenant Escape | `requireTenant` + `search_path` |
-| JSON pollution | `express.json({ strict:true })` |
-| Open Redirect | белый список returnUrl |
-| DOS через webhook | raw-body + early exit |
+| Угроза            | Защита                               |
+| ----------------- | ------------------------------------ |
+| Brute-force login | rate limit + audit                   |
+| JWT चोरी / reuse  | jti blacklist                        |
+| SSRF              | запрет внешних fetch кроме allowlist |
+| Webhook replay    | eventId + table `webhook_events`     |
+| Tenant Escape     | `requireTenant` + `search_path`      |
+| JSON pollution    | `express.json({ strict:true })`      |
+| Open Redirect     | белый список returnUrl               |
+| DOS через webhook | raw-body + early exit                |
 
 ---
 

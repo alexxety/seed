@@ -1,14 +1,14 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export const Route = createFileRoute('/success/$orderNumber')({
   component: SuccessPage,
-})
+});
 
 function SuccessPage() {
-  const navigate = useNavigate()
-  const { orderNumber } = Route.useParams()
+  const navigate = useNavigate();
+  const { orderNumber } = Route.useParams();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -18,13 +18,11 @@ function SuccessPage() {
         <p className="text-tg-hint mb-6">
           Номер заказа: <span className="font-semibold">#{orderNumber}</span>
         </p>
-        <p className="mb-6">
-          Спасибо за заказ! Мы свяжемся с вами в ближайшее время.
-        </p>
+        <p className="mb-6">Спасибо за заказ! Мы свяжемся с вами в ближайшее время.</p>
         <Button onClick={() => navigate({ to: '/' })} className="w-full">
           Вернуться на главную
         </Button>
       </Card>
     </div>
-  )
+  );
 }

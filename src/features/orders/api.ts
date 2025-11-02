@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import type { Order, OrderResponse } from '@/types'
+import { useMutation } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { Order, OrderResponse } from '@/types';
 
 export function useCreateOrder() {
   return useMutation({
@@ -8,7 +8,7 @@ export function useCreateOrder() {
       return apiClient<OrderResponse>('/api/send-order', {
         method: 'POST',
         body: JSON.stringify(order),
-      })
+      });
     },
-  })
+  });
 }

@@ -1,14 +1,14 @@
-import { Link } from '@tanstack/react-router'
-import { useAdminLogout } from '@/features/admin/auth/api'
-import { Button } from '@/components/ui/button'
+import { Link } from '@tanstack/react-router';
+import { useAdminLogout } from '@/features/admin/auth/api';
+import { Button } from '@/components/ui/button';
 
 export function AdminNav() {
-  const logout = useAdminLogout()
+  const logout = useAdminLogout();
 
   const handleLogout = () => {
-    logout()
-    window.location.href = '/admin/login'
-  }
+    logout();
+    window.location.href = '/admin/login';
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3">
@@ -48,5 +48,5 @@ export function AdminNav() {
         </Button>
       </div>
     </nav>
-  )
+  );
 }

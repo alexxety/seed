@@ -8,14 +8,14 @@
 
 ## 🎯 Выполненные задачи
 
-| # | Проблема | Статус | Решение |
-|---|----------|--------|---------|
-| 1 | TS/JS несовместимость | ✅ | Переименованы .ts → .js (4 файла) |
-| 2 | UUID функции (2 стандарта) | ✅ | Заменены gen_random_uuid → uuid_generate_v4 (8×) |
-| 3 | search_path вне транзакций | ✅ | Переписан middleware с SET LOCAL |
-| 4 | Небезопасный паттерн | ✅ | Новый API: req.db через getTenantDB() |
-| 5 | Неправильные imports | ✅ | Обновлены все imports (.js расширения) |
-| 6 | Синтаксис JavaScript | ✅ | Проверено через node --check |
+| #   | Проблема                   | Статус | Решение                                          |
+| --- | -------------------------- | ------ | ------------------------------------------------ |
+| 1   | TS/JS несовместимость      | ✅     | Переименованы .ts → .js (4 файла)                |
+| 2   | UUID функции (2 стандарта) | ✅     | Заменены gen_random_uuid → uuid_generate_v4 (8×) |
+| 3   | search_path вне транзакций | ✅     | Переписан middleware с SET LOCAL                 |
+| 4   | Небезопасный паттерн       | ✅     | Новый API: req.db через getTenantDB()            |
+| 5   | Неправильные imports       | ✅     | Обновлены все imports (.js расширения)           |
+| 6   | Синтаксис JavaScript       | ✅     | Проверено через node --check                     |
 
 ---
 
@@ -45,21 +45,23 @@ server/src/
 ### 3. Middleware паттерн
 
 **Было (НЕБЕЗОПАСНО)**:
+
 ```javascript
-app.use(autoSetSearchPath);  // SET search_path вне транзакции
+app.use(autoSetSearchPath); // SET search_path вне транзакции
 
 app.get('/api/products', async (req, res) => {
-  await setSearchPath(req);  // ❌ Опасно для пула!
+  await setSearchPath(req); // ❌ Опасно для пула!
   const products = await prisma.product.findMany();
 });
 ```
 
 **Стало (БЕЗОПАСНО)**:
+
 ```javascript
-app.use(attachTenantDB);  // Создаёт req.db с транзакциями
+app.use(attachTenantDB); // Создаёт req.db с транзакциями
 
 app.get('/api/products', async (req, res) => {
-  const products = await req.db.product.findMany();  // ✅ SET LOCAL внутри tx
+  const products = await req.db.product.findMany(); // ✅ SET LOCAL внутри tx
   res.json({ products });
 });
 ```
@@ -67,6 +69,7 @@ app.get('/api/products', async (req, res) => {
 ### 4. Новый API
 
 #### getTenantDB(req)
+
 ```javascript
 // Автоматически устанавливает SET LOCAL для каждого запроса
 const tenantPrisma = prisma.$extends({
@@ -83,6 +86,7 @@ const tenantPrisma = prisma.$extends({
 ```
 
 #### attachTenantDB middleware
+
 ```javascript
 // Создаёт req.db для каждого запроса
 async function attachTenantDB(req, res, next) {
@@ -92,9 +96,10 @@ async function attachTenantDB(req, res, next) {
 ```
 
 #### withTenantSchema(schema, callback)
+
 ```javascript
 // Для скриптов и CLI
-await withTenantSchema('t_abc_123', async (tx) => {
+await withTenantSchema('t_abc_123', async tx => {
   const products = await tx.product.findMany();
   return products;
 });
@@ -109,6 +114,7 @@ await withTenantSchema('t_abc_123', async (tx) => {
 ```
 
 **Изменённые файлы**:
+
 - `TENANCY_FIXES.md` (новый) - полная документация
 - `server.js` - обновлены imports и middleware
 - `scripts/create-tenant.js` - обновлён import
@@ -133,6 +139,7 @@ pm2 logs telegram-shop-dev --lines 50
 ```
 
 **Ожидаемый вывод**:
+
 ```
 ✅ ENV валидация прошла успешно
 🌐 Запрос к инфраструктуре (без tenant)
@@ -147,6 +154,7 @@ curl https://dev.x-bro.com/health
 ```
 
 **Ожидаемый ответ**:
+
 ```json
 {
   "status": "ok",
@@ -164,6 +172,7 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 **Ожидаемый вывод**:
+
 ```
 🚀 Создание нового tenant: demo
 ✅ Tenant создан: ID=abc-123-def, slug=demo
@@ -195,6 +204,7 @@ SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 't_%'
 ```
 
 **Тесты**:
+
 1. ✅ Логин супер-админа
 2. ✅ Список tenants
 3. ✅ Создание tenant
@@ -204,6 +214,7 @@ SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 't_%'
 ### 6. Создать DNS записи
 
 В Cloudflare для каждого tenant:
+
 ```
 demo.x-bro.com  →  A  →  46.224.19.173  (Proxy: ON)
 ```
@@ -221,6 +232,7 @@ curl https://demo.x-bro.com/health
 ### SET LOCAL vs SET
 
 **SET LOCAL** (используем):
+
 ```sql
 BEGIN;
 SET LOCAL search_path TO t_abc_123, public;
@@ -230,6 +242,7 @@ COMMIT;
 ```
 
 **SET** (НЕ используем):
+
 ```sql
 SET search_path TO t_abc_123, public;
 SELECT * FROM products;  -- Читает из t_abc_123.products
@@ -240,6 +253,7 @@ SELECT * FROM products;  -- Читает из t_abc_123.products
 ### req.db паттерн
 
 **Всегда используйте**:
+
 ```javascript
 // ✅ Правильно
 const products = await req.db.product.findMany();
@@ -284,6 +298,7 @@ Promise.all([
 **Проблема**: Старый import без .js расширения
 
 **Решение**:
+
 ```javascript
 // Было
 const { createTenant } = require('./server/src/db/tenants');
@@ -297,6 +312,7 @@ const { createTenant } = require('./server/src/db/tenants.js');
 **Проблема**: UUID функция не найдена
 
 **Решение**:
+
 ```sql
 -- Установить расширение
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -307,6 +323,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 **Проблема**: Схема tenant не создалась
 
 **Решение**:
+
 ```bash
 # Пересоздать tenant
 npm run create:tenant myshop "My Shop"
@@ -315,6 +332,7 @@ npm run create:tenant myshop "My Shop"
 ### Сервер не запускается
 
 **Проверка**:
+
 ```bash
 # 1. Проверить синтаксис
 node --check server.js
@@ -336,6 +354,7 @@ node -e "require('dotenv').config(); console.log(process.env.DATABASE_URL)"
 ### ✅ DONE
 
 Все критические проблемы исправлены:
+
 1. ✅ TS/JS несовместимость
 2. ✅ UUID функции
 3. ✅ search_path с транзакциями
@@ -346,6 +365,7 @@ node -e "require('dotenv').config(); console.log(process.env.DATABASE_URL)"
 ### 🚀 Готово к применению
 
 Система полностью готова к:
+
 - Применению миграций
 - Запуску на dev/prod серверах
 - Создание tenants
@@ -354,6 +374,7 @@ node -e "require('dotenv').config(); console.log(process.env.DATABASE_URL)"
 ### 📊 Следующие skills
 
 После успешного тестирования можно переходить к:
+
 1. **aggregator-sync** - синхронизация в маркетплейс
 2. **typesense-index** - поисковая индексация
 3. **crypto-billing** - крипто-платежи

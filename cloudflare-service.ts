@@ -91,9 +91,7 @@ export async function deleteShopDNS(subdomain: string): Promise<DNSResult> {
   }
 }
 
-export async function checkSubdomainAvailability(
-  subdomain: string
-): Promise<AvailabilityResult> {
+export async function checkSubdomainAvailability(subdomain: string): Promise<AvailabilityResult> {
   try {
     const records = await cloudflare.dns.records.list({
       zone_id: ZONE_ID,

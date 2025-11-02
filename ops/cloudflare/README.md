@@ -25,6 +25,7 @@ We use **two separate API tokens** for different operations to follow the princi
    - Required for all Cloudflare API requests
 
 **Why separate tokens?**
+
 - **Security**: If one token is compromised, the attacker only has access to a limited set of operations
 - **Auditability**: Different tokens make it easier to track which system performed which action
 - **Compliance**: Follows security best practices for API token management
@@ -48,6 +49,7 @@ We use **two separate API tokens** for different operations to follow the princi
 ## SEO Endpoints Implementation
 
 The application correctly returns proper Content-Type headers:
+
 - `/robots.txt`: `text/plain; charset=utf-8`
 - `/sitemap.xml`: `application/xml; charset=utf-8`
 
@@ -58,6 +60,7 @@ These endpoints are tenant-aware and dynamically generated based on subdomain.
 The following cache rules are applied to **Proxied subdomains only**:
 
 ### 1. Bypass robots.txt
+
 ```
 Expression: (http.request.uri.path eq "/robots.txt")
 Action: Bypass cache (cache: false)
@@ -65,6 +68,7 @@ Status: ✅ Active
 ```
 
 ### 2. Bypass sitemap.xml
+
 ```
 Expression: (http.request.uri.path eq "/sitemap.xml")
 Action: Bypass cache (cache: false)
@@ -72,6 +76,7 @@ Status: ✅ Active
 ```
 
 ### 3. Cache assets (future)
+
 ```
 Expression: (http.request.uri.path matches "^/assets/.*")
 Action: Cache everything, Edge TTL 30 days
@@ -91,6 +96,7 @@ To apply or update cache rules manually:
 5. Click **"Run workflow"** button
 
 This will:
+
 - Apply cache rules to Cloudflare
 - **Automatically perform targeted purge** for SEO endpoints (testshop.x-bro.com)
 - Verify the rules are active
@@ -101,6 +107,7 @@ This will:
 ### Automatic Triggers
 
 The workflow also runs automatically on:
+
 - Push to `dev` or `main` branches (when workflow file changes)
 
 ## Verification
@@ -188,6 +195,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache"
 ### Cache rules not working (still seeing HIT)
 
 1. **Verify the subdomain is Proxied**
+
    ```bash
    curl -I https://testshop.x-bro.com/robots.txt | grep -i server
    # Should show: server: cloudflare
@@ -214,6 +222,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache"
 ### demo.x-bro.com not showing BYPASS
 
 This is **expected behavior**! Demo is DNS only (grey cloud), so:
+
 - No Cloudflare proxy
 - No cache rules apply
 - No `cf-*` headers in responses
@@ -224,9 +233,11 @@ This is **expected behavior**! Demo is DNS only (grey cloud), so:
 ### Workflow fails with authentication error
 
 1. **Check GitHub Secrets**
+
    ```bash
    gh secret list -R alexxety/seed | grep CLOUDFLARE
    ```
+
    Should show:
    - CF_RULES_TOKEN
    - CLOUDFLARE_API_TOKEN
@@ -248,6 +259,7 @@ This is **expected behavior**! Demo is DNS only (grey cloud), so:
 ## Security Best Practices
 
 ### ✅ DO
+
 - Use separate tokens for different operations
 - Always mask secrets in GitHub Actions logs
 - Rotate tokens periodically (every 3-6 months)
@@ -255,6 +267,7 @@ This is **expected behavior**! Demo is DNS only (grey cloud), so:
 - Store tokens in GitHub Secrets, never in code
 
 ### ❌ DON'T
+
 - Never commit tokens to git
 - Never echo token values in logs
 - Never use a single token for all operations
@@ -273,6 +286,7 @@ To enable 30-day caching for `/assets/*`:
 4. Run workflow to apply
 
 This will cache all files under `/assets/` for 30 days with:
+
 - Edge TTL: 30 days (override origin)
 - Browser TTL: respect origin headers
 
@@ -285,6 +299,7 @@ This will cache all files under `/assets/` for 30 days with:
 ## Support
 
 For issues or questions:
+
 1. Check GitHub Actions logs for error details
 2. Review this README for common issues
 3. Check Cloudflare Dashboard for rule status

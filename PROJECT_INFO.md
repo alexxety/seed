@@ -6,6 +6,7 @@
 ## 🗂️ Где находятся файлы
 
 ### Локальная машина
+
 ```
 Проект: /Users/raketa23/seed
 Ветка: dev
@@ -13,6 +14,7 @@ Git: https://github.com/alexxety/seed.git
 ```
 
 ### Сервер Production
+
 ```
 Хост: root@46.224.19.173
 Путь: /var/www/telegram-shop
@@ -22,6 +24,7 @@ PM2: telegram-shop-prod
 ```
 
 ### Сервер Development
+
 ```
 Хост: root@46.224.19.173
 Путь: /var/www/telegram-shop-dev
@@ -34,25 +37,26 @@ PM2: telegram-shop-dev
 
 ### Production (работает на порту 3000)
 
-| URL | Назначение | Логин | Пароль |
-|-----|-----------|-------|--------|
-| https://x-bro.com | Главная страница | - | - |
+| URL                                      | Назначение             | Логин        | Пароль      |
+| ---------------------------------------- | ---------------------- | ------------ | ----------- |
+| https://x-bro.com                        | Главная страница       | -            | -           |
 | https://admin.x-bro.com/superadmin/login | **Супер-Админ панель** | `superadmin` | `super2025` |
-| https://seed.x-bro.com | Демо магазин | - | - |
-| https://seed.x-bro.com/admin/login | Админ демо-магазина | `admin` | `seed2025` |
-| https://\*.x-bro.com | Магазины пользователей | - | - |
+| https://seed.x-bro.com                   | Демо магазин           | -            | -           |
+| https://seed.x-bro.com/admin/login       | Админ демо-магазина    | `admin`      | `seed2025`  |
+| https://\*.x-bro.com                     | Магазины пользователей | -            | -           |
 
 ### Development (работает на порту 3001)
 
-| URL | Назначение | Логин | Пароль |
-|-----|-----------|-------|--------|
-| https://dev.x-bro.com | Dev главная | - | - |
+| URL                                          | Назначение          | Логин        | Пароль      |
+| -------------------------------------------- | ------------------- | ------------ | ----------- |
+| https://dev.x-bro.com                        | Dev главная         | -            | -           |
 | https://dev-admin.x-bro.com/superadmin/login | **Dev Супер-Админ** | `superadmin` | `super2025` |
-| https://deva.x-bro.com | Dev демо магазин | - | - |
+| https://deva.x-bro.com                       | Dev демо магазин    | -            | -           |
 
 ## 🔐 Все учетные данные
 
 ### Серверы
+
 ```bash
 # SSH доступ к серверу
 ssh root@46.224.19.173
@@ -60,6 +64,7 @@ ssh root@46.224.19.173
 ```
 
 ### База данных
+
 ```bash
 # PostgreSQL Production
 Host: localhost (на сервере)
@@ -77,6 +82,7 @@ Password: seedshop_secure_password_2025
 ```
 
 ### Супер-Админ
+
 ```
 Production: https://admin.x-bro.com/superadmin/login
 Dev: https://dev-admin.x-bro.com/superadmin/login
@@ -86,6 +92,7 @@ Dev: https://dev-admin.x-bro.com/superadmin/login
 ```
 
 ### Админ демо-магазина
+
 ```
 URL: https://seed.x-bro.com/admin/login
 Логин: admin
@@ -94,6 +101,7 @@ URL: https://seed.x-bro.com/admin/login
 ```
 
 ### GitHub
+
 ```
 Репозиторий: https://github.com/alexxety/seed
 Ветка production: main
@@ -101,6 +109,7 @@ URL: https://seed.x-bro.com/admin/login
 ```
 
 ### Cloudflare API
+
 ```bash
 # В .env файле на сервере
 CLOUDFLARE_API_TOKEN="NR5WkmdXtP3RuEZCd5juCYR76-JVstwovpTy2Vuc"
@@ -109,6 +118,7 @@ Zone: x-bro.com
 ```
 
 ### JWT Secret
+
 ```bash
 # В .env файле на сервере
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
@@ -160,6 +170,7 @@ seed/
 ## 🚀 Быстрые команды
 
 ### Локальная разработка
+
 ```bash
 cd /Users/raketa23/seed
 
@@ -184,6 +195,7 @@ git push origin main
 ```
 
 ### Работа с сервером
+
 ```bash
 # Подключиться к серверу
 ssh root@46.224.19.173
@@ -227,6 +239,7 @@ tail -f /var/log/nginx/error.log
 ```
 
 ### База данных
+
 ```bash
 # Подключиться к PostgreSQL на сервере
 ssh root@46.224.19.173
@@ -256,6 +269,7 @@ npx prisma studio
 ```
 
 ### Nginx
+
 ```bash
 # На сервере
 sudo nginx -t                    # Проверить конфиг
@@ -264,6 +278,7 @@ sudo systemctl status nginx       # Статус
 ```
 
 ### Cloudflare DNS
+
 ```bash
 # Создать DNS запись через curl
 curl -X POST "https://api.cloudflare.com/client/v4/zones/187bc600e8a0b4076e391eaf6283fdad/dns_records" \
@@ -290,7 +305,7 @@ curl -X GET "https://api.cloudflare.com/client/v4/zones/187bc600e8a0b4076e391eaf
 
 3. **Результат**:
    - Через 1-2 минуты https://myshop.x-bro.com работает!
-   - Nginx принимает запрос на *.x-bro.com
+   - Nginx принимает запрос на \*.x-bro.com
    - Node.js определяет магазин по Host заголовку
    - Загружает данные только для этого магазина
 
@@ -338,6 +353,7 @@ curl -X GET "https://api.cloudflare.com/client/v4/zones/187bc600e8a0b4076e391eaf
    - 580 строк документации
 
 ### Коммиты
+
 ```
 c113469 - Add comprehensive README documentation
 a4413dc - Fix superadmin infinite redirect loop and add authentication
@@ -360,6 +376,7 @@ dd537d8 - Setup full domain infrastructure and super-admin panel
 ## 🧪 Тестирование
 
 ### Тест супер-админ логина
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
   -H "Content-Type: application/json" \
@@ -370,6 +387,7 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
 ```
 
 ### Тест health check
+
 ```bash
 curl https://x-bro.com/health
 curl https://dev.x-bro.com/health
@@ -379,6 +397,7 @@ curl https://dev.x-bro.com/health
 ```
 
 ### Проверка PM2
+
 ```bash
 ssh root@46.224.19.173 "pm2 status"
 

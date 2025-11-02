@@ -1,24 +1,24 @@
-import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router'
-import { useSuperAdminAuthStore } from '@/features/superadmin/store'
-import { Button } from '@/components/ui/button'
+import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router';
+import { useSuperAdminAuthStore } from '@/features/superadmin/store';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/superadmin/_superadmin')({
   beforeLoad: () => {
-    const isAuthenticated = useSuperAdminAuthStore.getState().isAuthenticated()
+    const isAuthenticated = useSuperAdminAuthStore.getState().isAuthenticated();
     if (!isAuthenticated) {
-      throw redirect({ to: '/superadmin/login' })
+      throw redirect({ to: '/superadmin/login' });
     }
   },
   component: SuperAdminLayout,
-})
+});
 
 function SuperAdminLayout() {
-  const clearAuth = useSuperAdminAuthStore((state) => state.clearAuth)
+  const clearAuth = useSuperAdminAuthStore(state => state.clearAuth);
 
   const handleLogout = () => {
-    clearAuth()
-    window.location.href = '/superadmin/login'
-  }
+    clearAuth();
+    window.location.href = '/superadmin/login';
+  };
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -59,5 +59,5 @@ function SuperAdminLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

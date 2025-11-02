@@ -600,19 +600,24 @@ app.patch('/api/orders/:id', authenticateToken, apiLimiter, async (req: Request,
   }
 });
 
-app.delete('/api/orders/:id', authenticateToken, apiLimiter, async (req: Request, res: Response) => {
-  try {
-    await deleteOrder(parseInt(req.params.id));
-    res.json({ success: true, message: 'Order deleted successfully' });
-  } catch (error: any) {
-    logger.error('Error deleting order:', error);
-    if (error.message === 'Order not found') {
-      res.status(404).json({ error: 'Order not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete order', details: error.message });
+app.delete(
+  '/api/orders/:id',
+  authenticateToken,
+  apiLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      await deleteOrder(parseInt(req.params.id));
+      res.json({ success: true, message: 'Order deleted successfully' });
+    } catch (error: any) {
+      logger.error('Error deleting order:', error);
+      if (error.message === 'Order not found') {
+        res.status(404).json({ error: 'Order not found' });
+      } else {
+        res.status(500).json({ error: 'Failed to delete order', details: error.message });
+      }
     }
   }
-});
+);
 
 // Categories API
 app.get('/api/categories', async (req: Request, res: Response) => {
@@ -822,9 +827,7 @@ app.put('/api/admin/settings', authenticateToken, async (req: Request, res: Resp
     res.json({
       success: allSuccess,
       results,
-      message: allSuccess
-        ? 'All settings updated successfully'
-        : 'Some settings failed to update',
+      message: allSuccess ? 'All settings updated successfully' : 'Some settings failed to update',
     });
   } catch (error) {
     logger.error('Error updating settings:', error);

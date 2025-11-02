@@ -1,113 +1,120 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { useCategories, useProducts } from '@/features/products/api'
-import { useDeleteCategory, useCreateCategory, useUpdateCategory } from '@/features/admin/categories/api'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import type { Category } from '@/types'
+import { createFileRoute } from '@tanstack/react-router';
+import { useState, useMemo } from 'react';
+import { useCategories, useProducts } from '@/features/products/api';
+import {
+  useDeleteCategory,
+  useCreateCategory,
+  useUpdateCategory,
+} from '@/features/admin/categories/api';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import type { Category } from '@/types';
 
 export const Route = createFileRoute('/admin/_admin/categories')({
   component: AdminCategoriesPage,
-})
+});
 
 interface CategoryFormState {
-  name: string
-  emoji: string
+  name: string;
+  emoji: string;
 }
 
 function AdminCategoriesPage() {
-  const { data: categories, isLoading } = useCategories()
-  const { data: products } = useProducts()
-  const deleteCategory = useDeleteCategory()
-  const createCategory = useCreateCategory()
-  const updateCategory = useUpdateCategory()
+  const { data: categories, isLoading } = useCategories();
+  const { data: products } = useProducts();
+  const deleteCategory = useDeleteCategory();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
 
-  const [showModal, setShowModal] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormState>({
     name: '',
     emoji: '',
-  })
+  });
 
   // Подсчитываем количество товаров в каждой категории
   const productCountByCategory = useMemo(() => {
-    if (!products) return {}
-    return products.reduce((acc, product) => {
-      acc[product.category] = (acc[product.category] || 0) + 1
-      return acc
-    }, {} as Record<number, number>)
-  }, [products])
+    if (!products) return {};
+    return products.reduce(
+      (acc, product) => {
+        acc[product.category] = (acc[product.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>
+    );
+  }, [products]);
 
   const handleDelete = (id: number, name: string, productCount: number) => {
     if (productCount > 0) {
       alert(
         `❌ Невозможно удалить категорию "${name}"\n\n` +
-        `В этой категории ${productCount} товар(ов).\n\n` +
-        `Сначала переместите все товары в другую категорию или удалите их.`
-      )
-      return
+          `В этой категории ${productCount} товар(ов).\n\n` +
+          `Сначала переместите все товары в другую категорию или удалите их.`
+      );
+      return;
     }
 
     if (confirm(`Удалить категорию "${name}"?`)) {
       deleteCategory.mutate(id, {
         onError: (error: any) => {
-          const errorMessage = error.message || 'Произошла ошибка при удалении категории'
-          alert(`❌ Ошибка\n\n${errorMessage}`)
-        }
-      })
+          const errorMessage = error.message || 'Произошла ошибка при удалении категории';
+          alert(`❌ Ошибка\n\n${errorMessage}`);
+        },
+      });
     }
-  }
+  };
 
   const handleOpenCreate = () => {
-    setEditingCategory(null)
+    setEditingCategory(null);
     setFormData({
       name: '',
       emoji: '',
-    })
-    setShowModal(true)
-  }
+    });
+    setShowModal(true);
+  };
 
   const handleOpenEdit = (category: Category) => {
-    setEditingCategory(category)
+    setEditingCategory(category);
     setFormData({
       name: category.name,
       emoji: category.emoji || category.icon,
-    })
-    setShowModal(true)
-  }
+    });
+    setShowModal(true);
+  };
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setEditingCategory(null)
+    setShowModal(false);
+    setEditingCategory(null);
     setFormData({
       name: '',
       emoji: '',
-    })
-  }
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (editingCategory) {
       updateCategory.mutate(
         { id: editingCategory.id, data: formData },
         {
           onSuccess: () => {
-            handleCloseModal()
+            handleCloseModal();
           },
         }
-      )
+      );
     } else {
       createCategory.mutate(formData, {
         onSuccess: () => {
-          handleCloseModal()
+          handleCloseModal();
         },
-      })
+      });
     }
-  }
+  };
 
   if (isLoading) {
-    return <div className="text-center py-12">Загрузка категорий...</div>
+    return <div className="text-center py-12">Загрузка категорий...</div>;
   }
 
   return (
@@ -123,17 +130,15 @@ function AdminCategoriesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((category) => {
-            const productCount = productCountByCategory[category.id] || 0
+          {categories.map(category => {
+            const productCount = productCountByCategory[category.id] || 0;
             return (
               <Card key={category.id} className="p-6">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-4xl">{category.emoji || category.icon}</span>
                   <div>
                     <h3 className="text-xl font-semibold">{category.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {productCount} товар(ов)
-                    </p>
+                    <p className="text-sm text-gray-500">{productCount} товар(ов)</p>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
@@ -156,7 +161,7 @@ function AdminCategoriesPage() {
                   </Button>
                 </div>
               </Card>
-            )
+            );
           })}
         </div>
       )}
@@ -173,7 +178,7 @@ function AdminCategoriesPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
@@ -182,7 +187,40 @@ function AdminCategoriesPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Эмодзи</label>
                 <div className="grid grid-cols-8 gap-2 mb-2 p-3 border rounded-lg bg-gray-50 max-h-48 overflow-y-auto">
-                  {['🌿', '🌱', '🌾', '🍀', '☘️', '🌳', '🌲', '🌴', '🌵', '🪴', '🍃', '🌸', '🌺', '🌻', '🌼', '🌷', '🥀', '🌹', '💐', '🍄', '🌰', '🛍️', '📦', '💊', '⚗️', '🧪', '🔬', '💚', '♻️', '🌈', '✨', '🔥'].map((emoji, index) => (
+                  {[
+                    '🌿',
+                    '🌱',
+                    '🌾',
+                    '🍀',
+                    '☘️',
+                    '🌳',
+                    '🌲',
+                    '🌴',
+                    '🌵',
+                    '🪴',
+                    '🍃',
+                    '🌸',
+                    '🌺',
+                    '🌻',
+                    '🌼',
+                    '🌷',
+                    '🥀',
+                    '🌹',
+                    '💐',
+                    '🍄',
+                    '🌰',
+                    '🛍️',
+                    '📦',
+                    '💊',
+                    '⚗️',
+                    '🧪',
+                    '🔬',
+                    '💚',
+                    '♻️',
+                    '🌈',
+                    '✨',
+                    '🔥',
+                  ].map((emoji, index) => (
                     <button
                       key={`${emoji}-${index}`}
                       type="button"
@@ -198,15 +236,13 @@ function AdminCategoriesPage() {
                 <input
                   type="text"
                   value={formData.emoji}
-                  onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                  onChange={e => setFormData({ ...formData, emoji: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg text-2xl"
                   required
                   placeholder="🛍️"
                   maxLength={2}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Выберите эмодзи выше или вставьте свой
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Выберите эмодзи выше или вставьте свой</p>
               </div>
 
               <div className="flex gap-2 pt-2">
@@ -231,5 +267,5 @@ function AdminCategoriesPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

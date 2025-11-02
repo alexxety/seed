@@ -10,14 +10,17 @@
 ### 1. ✅ TS/JS несовместимость
 
 **Проблема**:
+
 - Файлы .ts требовались через require() из .js без компиляции
 - Сервер не мог запуститься
 
 **Решение**:
+
 - Переименованы все .ts → .js (CommonJS)
 - Обновлены все imports с расширением .js
 
 **Изменённые файлы**:
+
 ```
 server/src/config/env.ts        → server/src/config/env.js
 server/src/db/tenants.ts         → server/src/db/tenants.js
@@ -26,6 +29,7 @@ server/src/multitenancy/middleware.ts     → server/src/multitenancy/middleware
 ```
 
 **Обновлены imports в**:
+
 - `server.js` (строки 21-23)
 - `scripts/create-tenant.js` (строка 4)
 
@@ -34,15 +38,18 @@ server/src/multitenancy/middleware.ts     → server/src/multitenancy/middleware
 ### 2. ✅ UUID функции приведены к стандарту
 
 **Проблема**:
+
 - В миграции: `uuid_generate_v4()` (расширение uuid-ossp)
 - В tenants.js: `gen_random_uuid()` (pgcrypto)
 - Несоответствие стандартов
 
 **Решение**:
+
 - Заменены все `gen_random_uuid()` → `uuid_generate_v4()`
 - 8 замен в `server/src/db/tenants.js`
 
 **Команда**:
+
 ```bash
 sed -i '' 's/gen_random_uuid()/uuid_generate_v4()/g' server/src/db/tenants.js
 ```
@@ -52,6 +59,7 @@ sed -i '' 's/gen_random_uuid()/uuid_generate_v4()/g' server/src/db/tenants.js
 ### 3. ✅ search_path с транзакциями (SET LOCAL)
 
 **Проблема**:
+
 - `SET search_path` выполнялся вне транзакции
 - Опасно из-за пула соединений PostgreSQL
 - Могли возникать race conditions
@@ -62,6 +70,7 @@ sed -i '' 's/gen_random_uuid()/uuid_generate_v4()/g' server/src/db/tenants.js
 #### Новый паттерн:
 
 **1. Функция `getTenantDB(req)`**:
+
 ```javascript
 // Использует Prisma.$extends() для автоматической установки search_path
 const tenantPrisma = prisma.$extends({
@@ -78,21 +87,24 @@ const tenantPrisma = prisma.$extends({
 ```
 
 **2. Middleware `attachTenantDB(req, res, next)`**:
+
 ```javascript
 // Создаёт req.db для использования в хэндлерах
 req.db = await getTenantDB(req);
 ```
 
 **3. Утилита `withTenantSchema(schema, callback)`**:
+
 ```javascript
 // Для скриптов и CLI
-await withTenantSchema('t_abc_123', async (tx) => {
+await withTenantSchema('t_abc_123', async tx => {
   // tx уже имеет правильный search_path
   const products = await tx.product.findMany();
 });
 ```
 
 #### Преимущества нового подхода:
+
 - ✅ `SET LOCAL` действует только внутри транзакции
 - ✅ Безопасно для пула соединений
 - ✅ Нет race conditions
@@ -103,18 +115,21 @@ await withTenantSchema('t_abc_123', async (tx) => {
 ### 4. ✅ Обновлён middleware паттерн
 
 **Было**:
+
 ```javascript
 app.use(setTenantContext);
 app.use(autoSetSearchPath); // Устаревший, небезопасный
 ```
 
 **Стало**:
+
 ```javascript
-app.use(setTenantContext);   // Определяет tenant
-app.use(attachTenantDB);     // Создаёт req.db с транзакциями
+app.use(setTenantContext); // Определяет tenant
+app.use(attachTenantDB); // Создаёт req.db с транзакциями
 ```
 
 **Использование в роутах**:
+
 ```javascript
 // Старый способ (НЕ используйте)
 app.get('/api/products', async (req, res) => {
@@ -136,6 +151,7 @@ app.get('/api/products', async (req, res) => {
 ### server/src/multitenancy/middleware.js
 
 **Полностью переписан**:
+
 - Удалён небезопасный паттерн `SET search_path`
 - Добавлен `getTenantDB(req)` с Prisma.$extends()
 - Добавлен `attachTenantDB` middleware
@@ -145,15 +161,18 @@ app.get('/api/products', async (req, res) => {
 ### server/src/db/tenants.js
 
 **Изменения**:
+
 ```diff
 - id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 + id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 ```
+
 ×8 раз во всех таблицах
 
 ### server.js
 
 **Строки 21-23**:
+
 ```diff
 - const { createTenant, getAllTenants, getTenantBySlug, getTenantById } = require('./server/src/db/tenants');
 - const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context');
@@ -164,6 +183,7 @@ app.get('/api/products', async (req, res) => {
 ```
 
 **Строки 77-79**:
+
 ```diff
   app.use(setTenantContext);
 - app.use(autoSetSearchPath);
@@ -174,6 +194,7 @@ app.get('/api/products', async (req, res) => {
 ### scripts/create-tenant.js
 
 **Строка 4**:
+
 ```diff
 - const { createTenant } = require('../server/src/db/tenants');
 + const { createTenant } = require('../server/src/db/tenants.js');
@@ -247,6 +268,7 @@ npm run create:tenant demo "Demo Shop"
 ### Ожидаемые результаты:
 
 #### Health check:
+
 ```json
 {
   "status": "ok",
@@ -258,6 +280,7 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 #### Создание tenant:
+
 ```
 🚀 Создание нового tenant: demo
 ✅ Tenant создан: ID=abc-123-def, slug=demo
@@ -268,6 +291,7 @@ npm run create:tenant demo "Demo Shop"
 ```
 
 #### API логин:
+
 ```json
 {
   "success": true,
@@ -297,6 +321,7 @@ psql $DATABASE_URL -c "\d public.tenants"
 ```
 
 **Ожидаемая структура**:
+
 ```sql
 Table "public.tenants"
    Column    |            Type             | Nullable | Default
@@ -351,6 +376,7 @@ npm run create:tenant demo "Demo Shop"
 ### 4. Создать DNS записи в Cloudflare
 
 Для каждого созданного tenant нужно добавить A-запись:
+
 ```
 demo.x-bro.com → 46.224.19.173
 ```
@@ -358,6 +384,7 @@ demo.x-bro.com → 46.224.19.173
 ### 5. Реализовать следующий skill
 
 После успешного тестирования перейти к:
+
 - **aggregator-sync** - синхронизация данных в маркетплейс
 - **typesense-index** - поисковая индексация
 - **crypto-billing** - крипто-платежи
@@ -369,11 +396,13 @@ demo.x-bro.com → 46.224.19.173
 ### 1. SET LOCAL vs SET
 
 **SET LOCAL** (правильно):
+
 - Действует только внутри текущей транзакции
 - Автоматически откатывается после COMMIT/ROLLBACK
 - Безопасно для пула соединений
 
 **SET** (неправильно):
+
 - Действует для всей сессии
 - Остаётся после транзакции
 - Может влиять на другие запросы из пула
@@ -381,6 +410,7 @@ demo.x-bro.com → 46.224.19.173
 ### 2. req.db паттерн
 
 **Всегда используйте** `req.db` в роутах:
+
 ```javascript
 // ✅ Правильно
 app.get('/api/products', async (req, res) => {
@@ -399,6 +429,7 @@ app.get('/api/products', async (req, res) => {
 ### 3. Tenant isolation
 
 **Гарантии**:
+
 - ✅ Каждый запрос изолирован в своей транзакции
 - ✅ search_path устанавливается через SET LOCAL
 - ✅ Невозможно получить доступ к данным другого tenant

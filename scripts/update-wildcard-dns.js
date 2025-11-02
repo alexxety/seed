@@ -37,7 +37,9 @@ async function updateWildcardDNS() {
       console.log('✅ Wildcard запись создана:');
       console.log(`   Name: ${newRecord.name}`);
       console.log(`   Content: ${newRecord.content}`);
-      console.log(`   Proxied: ${newRecord.proxied} (${newRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`);
+      console.log(
+        `   Proxied: ${newRecord.proxied} (${newRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`
+      );
       console.log(`   ID: ${newRecord.id}\n`);
 
       return;
@@ -47,7 +49,9 @@ async function updateWildcardDNS() {
     console.log('✅ Найдена wildcard запись:');
     console.log(`   Name: ${wildcardRecord.name}`);
     console.log(`   Content: ${wildcardRecord.content}`);
-    console.log(`   Proxied: ${wildcardRecord.proxied} (${wildcardRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`);
+    console.log(
+      `   Proxied: ${wildcardRecord.proxied} (${wildcardRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`
+    );
     console.log(`   ID: ${wildcardRecord.id}\n`);
 
     if (!wildcardRecord.proxied) {
@@ -59,22 +63,21 @@ async function updateWildcardDNS() {
     console.log('🔧 Обновляем запись: отключаем Cloudflare proxy...\n');
 
     // Обновляем запись - отключаем proxy
-    const updatedRecord = await cloudflare.dns.records.update(
-      wildcardRecord.id,
-      {
-        zone_id: ZONE_ID,
-        type: 'A',
-        name: '*',
-        content: SERVER_IP,
-        ttl: 1,
-        proxied: false, // DNS only (серое облачко)
-      }
-    );
+    const updatedRecord = await cloudflare.dns.records.update(wildcardRecord.id, {
+      zone_id: ZONE_ID,
+      type: 'A',
+      name: '*',
+      content: SERVER_IP,
+      ttl: 1,
+      proxied: false, // DNS only (серое облачко)
+    });
 
     console.log('✅ Запись успешно обновлена:');
     console.log(`   Name: ${updatedRecord.name}`);
     console.log(`   Content: ${updatedRecord.content}`);
-    console.log(`   Proxied: ${updatedRecord.proxied} (${updatedRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`);
+    console.log(
+      `   Proxied: ${updatedRecord.proxied} (${updatedRecord.proxied ? '🟠 оранжевое' : '⚪ серое'} облачко)`
+    );
     console.log(`   TTL: ${updatedRecord.ttl === 1 ? 'Auto' : updatedRecord.ttl}\n`);
 
     console.log('🎉 Готово! Теперь все поддомены *.x-bro.com резолвятся напрямую на сервер.');
@@ -83,7 +86,6 @@ async function updateWildcardDNS() {
     console.log('🧪 Проверка через несколько минут:');
     console.log('   dig demo.x-bro.com +short');
     console.log('   # Должен показать: 46.224.19.173\n');
-
   } catch (error) {
     console.error('❌ Ошибка:', error.message);
     if (error.response) {

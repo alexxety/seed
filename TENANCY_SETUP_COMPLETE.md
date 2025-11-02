@@ -39,6 +39,7 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
 **Расширенная структура tenant-схемы**:
 
 #### Таблицы (8 таблиц):
+
 1. **products** - базовая информация о товарах
    - `id`, `name`, `description`, `vendor`, `category`, `tags[]`
 
@@ -65,6 +66,7 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
    - `id`, `event_type`, `aggregate_type`, `aggregate_id`, `payload`, `processed_at`
 
 #### Индексы (22 индекса):
+
 - Products: `is_active`, `category`, `tags` (GIN)
 - Variants: `product_id`, `sku`
 - Prices: `variant_id`, `is_active`
@@ -75,6 +77,7 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
 - Outbox: `processed_at`, `event_type`, `aggregate`
 
 #### Foreign Keys с CASCADE:
+
 - `product_variants.product_id` → `products.id` (ON DELETE CASCADE)
 - `prices.variant_id` → `product_variants.id` (ON DELETE CASCADE)
 - `inventory.variant_id` → `product_variants.id` (ON DELETE CASCADE)
@@ -84,6 +87,7 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
 ### 3. ✅ Middleware интегрирован в server.js
 
 **Строки 22-23, 77-78**:
+
 ```javascript
 // Импорты
 const { setTenantContext, requireTenant } = require('./server/src/multitenancy/tenant-context');
@@ -95,6 +99,7 @@ app.use(autoSetSearchPath);
 ```
 
 **Как работает**:
+
 1. `setTenantContext` - определяет tenant по:
    - Поддомену: `myshop.x-bro.com` → slug="myshop"
    - Заголовку: `X-Tenant: myshop`
@@ -109,12 +114,14 @@ app.use(autoSetSearchPath);
 **Строки 193-317 в server.js**:
 
 #### POST /api/superadmin/login
+
 ```javascript
 // Логин: superadmin / super2025
 // Возвращает JWT с role='superadmin'
 ```
 
 #### GET /api/superadmin/tenants
+
 ```javascript
 // Требуется: Authorization: Bearer <token>
 // Требуется: role='superadmin'
@@ -122,6 +129,7 @@ app.use(autoSetSearchPath);
 ```
 
 #### POST /api/superadmin/tenants
+
 ```javascript
 // Требуется: Authorization: Bearer <token>
 // Требуется: role='superadmin'
@@ -131,6 +139,7 @@ app.use(autoSetSearchPath);
 ```
 
 #### GET /api/superadmin/tenants/:slug
+
 ```javascript
 // Требуется: Authorization: Bearer <token>
 // Требуется: role='superadmin'
@@ -162,12 +171,14 @@ t_{uuid}/
 ### Файл: API_EXAMPLES.sh
 
 Запустить полный тест:
+
 ```bash
 chmod +x API_EXAMPLES.sh
 ./API_EXAMPLES.sh
 ```
 
 Скрипт выполнит:
+
 1. ✅ Логин супер-админа
 2. ✅ Получение списка tenants
 3. ✅ Создание нового tenant
@@ -177,6 +188,7 @@ chmod +x API_EXAMPLES.sh
 ### Ручные curl примеры:
 
 #### 1. Логин
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
   -H "Content-Type: application/json" \
@@ -194,6 +206,7 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
 ```
 
 #### 2. Список tenants
+
 ```bash
 TOKEN="<your-token>"
 
@@ -217,6 +230,7 @@ curl https://dev-admin.x-bro.com/api/superadmin/tenants \
 ```
 
 #### 3. Создать tenant
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
   -H "Authorization: Bearer $TOKEN" \
@@ -239,6 +253,7 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
 ```
 
 #### 4. Получить tenant
+
 ```bash
 curl https://dev-admin.x-bro.com/api/superadmin/tenants/myshop \
   -H "Authorization: Bearer $TOKEN"
@@ -319,11 +334,13 @@ curl https://admin.x-bro.com/health
 ### server/src/db/tenants.ts
 
 **Было**:
+
 - 4 таблицы: products, customers, orders, outbox
 - 3 индекса
 - Простая структура без вариантов и цен
 
 **Стало**:
+
 - 8 таблиц: products, product_variants, prices, inventory, customers, orders, order_items, outbox
 - 22 индекса
 - Полная e-commerce структура с вариантами, ценами, запасами
@@ -351,6 +368,7 @@ curl https://admin.x-bro.com/health
 ## 🔜 Следующие шаги
 
 1. **Применить на dev сервере**:
+
    ```bash
    ssh root@46.224.19.173
    cd /var/www/telegram-shop-dev
@@ -361,6 +379,7 @@ curl https://admin.x-bro.com/health
    ```
 
 2. **Протестировать API**:
+
    ```bash
    ./API_EXAMPLES.sh
    ```

@@ -69,6 +69,14 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '*.config.js', '*.config.cjs', 'api/', 'setup-dns-structure.js'],
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'build/',
+      '*.config.js',
+      '*.config.cjs',
+      'api/',
+      'setup-dns-structure.js',
+    ],
   },
 ];

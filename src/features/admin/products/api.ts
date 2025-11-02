@@ -1,44 +1,41 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import type { ProductFormData } from '@/types'
-import { useAdminAuthStore } from '../auth/store'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { ProductFormData } from '@/types';
+import { useAdminAuthStore } from '../auth/store';
 
 function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken()
+  const token = useAdminAuthStore.getState().getToken();
   return {
     Authorization: `Bearer ${token}`,
-  }
+  };
 }
 
 export function useCreateProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const response = await apiClient<{ success: boolean; product: any }>(
-        '/api/admin/products',
-        {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            name: data.name,
-            price: data.price,
-            category_id: data.category,
-            image: data.image,
-            description: data.description,
-          }),
-        }
-      )
-      return response.product
+      const response = await apiClient<{ success: boolean; product: any }>('/api/admin/products', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          name: data.name,
+          price: data.price,
+          category_id: data.category,
+          image: data.image,
+          description: data.description,
+        }),
+      });
+      return response.product;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-  })
+  });
 }
 
 export function useUpdateProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ProductFormData }) => {
@@ -55,27 +52,27 @@ export function useUpdateProduct() {
             description: data.description,
           }),
         }
-      )
-      return response.product
+      );
+      return response.product;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-  })
+  });
 }
 
 export function useDeleteProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: number) => {
       await apiClient<{ success: boolean }>(`/api/admin/products/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
-      })
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-  })
+  });
 }

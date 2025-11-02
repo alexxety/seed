@@ -1,14 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { Header } from '@/components/Header'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { checkSubdomainAvailability, registerShop, type RegisterShopData } from '@/features/shops/api'
+import { createFileRoute } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  checkSubdomainAvailability,
+  registerShop,
+  type RegisterShopData,
+} from '@/features/shops/api';
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
-})
+});
 
 function RegisterPage() {
   const [formData, setFormData] = useState<RegisterShopData>({
@@ -19,33 +23,33 @@ function RegisterPage() {
     botToken: '',
     chatId: '',
     adminTelegramId: '',
-  })
+  });
 
   const [subdomainStatus, setSubdomainStatus] = useState<{
-    checking: boolean
-    available: boolean | null
-    error: string | null
+    checking: boolean;
+    available: boolean | null;
+    error: string | null;
   }>({
     checking: false,
     available: null,
     error: null,
-  })
+  });
 
   const [success, setSuccess] = useState<{
-    show: boolean
-    shopUrl: string
-    message: string
-  } | null>(null)
+    show: boolean;
+    shopUrl: string;
+    message: string;
+  } | null>(null);
 
   const registerMutation = useMutation({
     mutationFn: registerShop,
-    onSuccess: (data) => {
+    onSuccess: data => {
       if (data.success && data.shop) {
         setSuccess({
           show: true,
           shopUrl: data.shop.url,
           message: data.message || 'Магазин успешно создан!',
-        })
+        });
         // Clear form
         setFormData({
           subdomain: '',
@@ -55,53 +59,53 @@ function RegisterPage() {
           botToken: '',
           chatId: '',
           adminTelegramId: '',
-        })
+        });
       }
     },
-  })
+  });
 
   // Check subdomain availability with debounce
   useEffect(() => {
     if (!formData.subdomain || formData.subdomain.length < 3) {
-      setSubdomainStatus({ checking: false, available: null, error: null })
-      return
+      setSubdomainStatus({ checking: false, available: null, error: null });
+      return;
     }
 
     const timeoutId = setTimeout(async () => {
-      setSubdomainStatus({ checking: true, available: null, error: null })
+      setSubdomainStatus({ checking: true, available: null, error: null });
       try {
-        const result = await checkSubdomainAvailability(formData.subdomain)
+        const result = await checkSubdomainAvailability(formData.subdomain);
         setSubdomainStatus({
           checking: false,
           available: result.available,
           error: result.error || null,
-        })
+        });
       } catch {
         setSubdomainStatus({
           checking: false,
           available: false,
           error: 'Ошибка проверки доступности',
-        })
+        });
       }
-    }, 500)
+    }, 500);
 
-    return () => clearTimeout(timeoutId)
-  }, [formData.subdomain])
+    return () => clearTimeout(timeoutId);
+  }, [formData.subdomain]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Validation
     if (!subdomainStatus.available) {
-      return
+      return;
     }
 
-    registerMutation.mutate(formData)
-  }
+    registerMutation.mutate(formData);
+  };
 
   const handleInputChange = (field: keyof RegisterShopData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const isFormValid =
     subdomainStatus.available &&
@@ -109,7 +113,7 @@ function RegisterPage() {
     formData.ownerEmail &&
     formData.botToken &&
     formData.chatId &&
-    formData.adminTelegramId
+    formData.adminTelegramId;
 
   if (success?.show) {
     return (
@@ -124,7 +128,9 @@ function RegisterPage() {
               </h2>
               <p className="text-green-700 dark:text-green-400 mb-4">{success.message}</p>
               <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-green-300 dark:border-green-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Адрес вашего магазина:</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Адрес вашего магазина:
+                </p>
                 <a
                   href={success.shopUrl}
                   target="_blank"
@@ -136,22 +142,17 @@ function RegisterPage() {
               </div>
             </div>
             <div className="flex gap-3 justify-center mt-6">
-              <Button
-                onClick={() => setSuccess(null)}
-                variant="outline"
-              >
+              <Button onClick={() => setSuccess(null)} variant="outline">
                 Зарегистрировать ещё один магазин
               </Button>
-              <Button
-                onClick={() => window.open(success.shopUrl, '_blank')}
-              >
+              <Button onClick={() => window.open(success.shopUrl, '_blank')}>
                 Перейти в магазин
               </Button>
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -175,7 +176,7 @@ function RegisterPage() {
               <Input
                 type="text"
                 value={formData.subdomain}
-                onChange={(e) => handleInputChange('subdomain', e.target.value.toLowerCase())}
+                onChange={e => handleInputChange('subdomain', e.target.value.toLowerCase())}
                 placeholder="ivan"
                 className="pr-28"
                 pattern="[a-z0-9-]+"
@@ -198,9 +199,7 @@ function RegisterPage() {
                 ❌ {subdomainStatus.error || 'Занят'}
               </p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              3-20 символов, только буквы, цифры и дефис
-            </p>
+            <p className="text-xs text-gray-500 mt-1">3-20 символов, только буквы, цифры и дефис</p>
           </div>
 
           {/* Owner Name */}
@@ -211,7 +210,7 @@ function RegisterPage() {
             <Input
               type="text"
               value={formData.ownerName}
-              onChange={(e) => handleInputChange('ownerName', e.target.value)}
+              onChange={e => handleInputChange('ownerName', e.target.value)}
               placeholder="Иван Иванов"
               required
             />
@@ -225,7 +224,7 @@ function RegisterPage() {
             <Input
               type="email"
               value={formData.ownerEmail}
-              onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
+              onChange={e => handleInputChange('ownerEmail', e.target.value)}
               placeholder="ivan@example.com"
               required
             />
@@ -237,7 +236,7 @@ function RegisterPage() {
             <Input
               type="tel"
               value={formData.ownerPhone}
-              onChange={(e) => handleInputChange('ownerPhone', e.target.value)}
+              onChange={e => handleInputChange('ownerPhone', e.target.value)}
               placeholder="+7 (999) 123-45-67"
             />
           </div>
@@ -250,7 +249,7 @@ function RegisterPage() {
             <Input
               type="text"
               value={formData.botToken}
-              onChange={(e) => handleInputChange('botToken', e.target.value)}
+              onChange={e => handleInputChange('botToken', e.target.value)}
               placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
               required
             />
@@ -275,7 +274,7 @@ function RegisterPage() {
             <Input
               type="text"
               value={formData.chatId}
-              onChange={(e) => handleInputChange('chatId', e.target.value)}
+              onChange={e => handleInputChange('chatId', e.target.value)}
               placeholder="-1001234567890"
               required
             />
@@ -292,7 +291,7 @@ function RegisterPage() {
             <Input
               type="text"
               value={formData.adminTelegramId}
-              onChange={(e) => handleInputChange('adminTelegramId', e.target.value)}
+              onChange={e => handleInputChange('adminTelegramId', e.target.value)}
               placeholder="123456789"
               required
             />
@@ -346,5 +345,5 @@ function RegisterPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

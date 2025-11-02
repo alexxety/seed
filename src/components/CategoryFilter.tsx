@@ -1,10 +1,10 @@
-import type { Category } from '@/types'
-import { cn } from '@/lib/utils'
+import type { Category } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface CategoryFilterProps {
-  categories?: Category[]
-  selectedCategory: number | null
-  onSelectCategory: (categoryId: number | null) => void
+  categories?: Category[];
+  selectedCategory: number | null;
+  onSelectCategory: (categoryId: number | null) => void;
 }
 
 export function CategoryFilter({
@@ -25,7 +25,7 @@ export function CategoryFilter({
       >
         Все
       </button>
-      {categories.map((category) => (
+      {categories.map(category => (
         <button
           key={category.id}
           onClick={() => onSelectCategory(category.id)}
@@ -40,5 +40,5 @@ export function CategoryFilter({
         </button>
       ))}
     </div>
-  )
+  );
 }

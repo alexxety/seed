@@ -1,20 +1,20 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useProduct } from '@/features/products/api'
-import { useCartStore } from '@/features/cart/store'
-import { Header } from '@/components/Header'
-import { Button } from '@/components/ui/button'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useProduct } from '@/features/products/api';
+import { useCartStore } from '@/features/cart/store';
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/product/$id')({
   component: ProductPage,
-})
+});
 
 function ProductPage() {
-  const navigate = useNavigate()
-  const { id } = Route.useParams()
-  const product = useProduct(Number(id))
-  const addItem = useCartStore((state) => state.addItem)
-  const [quantity, setQuantity] = useState(1)
+  const navigate = useNavigate();
+  const { id } = Route.useParams();
+  const product = useProduct(Number(id));
+  const addItem = useCartStore(state => state.addItem);
+  const [quantity, setQuantity] = useState(1);
 
   if (!product) {
     return (
@@ -22,13 +22,13 @@ function ProductPage() {
         <div className="text-5xl">❌</div>
         <div className="text-lg text-gray-900 dark:text-white">Товар не найден</div>
       </div>
-    )
+    );
   }
 
   const handleAddToCart = () => {
-    addItem(product, quantity)
-    navigate({ to: '/' })
-  }
+    addItem(product, quantity);
+    navigate({ to: '/' });
+  };
 
   return (
     <div className="min-h-screen">
@@ -38,14 +38,15 @@ function ProductPage() {
           src={product.image}
           alt={product.name}
           className="w-full h-80 object-cover rounded-lg mb-4"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-            const parent = e.currentTarget.parentElement
+          onError={e => {
+            e.currentTarget.style.display = 'none';
+            const parent = e.currentTarget.parentElement;
             if (parent) {
-              const placeholder = document.createElement('div')
-              placeholder.className = 'w-full h-80 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-7xl rounded-lg mb-4'
-              placeholder.textContent = '🌱'
-              parent.insertBefore(placeholder, parent.firstChild)
+              const placeholder = document.createElement('div');
+              placeholder.className =
+                'w-full h-80 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-7xl rounded-lg mb-4';
+              placeholder.textContent = '🌱';
+              parent.insertBefore(placeholder, parent.firstChild);
             }
           }}
         />
@@ -76,5 +77,5 @@ function ProductPage() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

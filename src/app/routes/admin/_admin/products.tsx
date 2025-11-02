@@ -1,18 +1,22 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useProducts, useCategories } from '@/features/products/api'
-import { useDeleteProduct, useCreateProduct, useUpdateProduct } from '@/features/admin/products/api'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import type { Product } from '@/types'
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useProducts, useCategories } from '@/features/products/api';
+import {
+  useDeleteProduct,
+  useCreateProduct,
+  useUpdateProduct,
+} from '@/features/admin/products/api';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import type { Product } from '@/types';
 
 export const Route = createFileRoute('/admin/_admin/products')({
   component: AdminProductsPage,
-})
+});
 
 // Компонент для изображения с заглушкой
 function ProductImage({ src, alt }: { src: string; alt: string }) {
-  const [error, setError] = useState(false)
+  const [error, setError] = useState(false);
 
   if (error || !src) {
     return (
@@ -34,7 +38,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
           <p className="text-sm">Нет изображения</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -44,82 +48,82 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
       className="w-full h-48 object-cover rounded-lg mb-3"
       onError={() => setError(true)}
     />
-  )
+  );
 }
 
 interface ProductFormState {
-  name: string
-  price: string
-  category: string
-  image: string
-  description: string
+  name: string;
+  price: string;
+  category: string;
+  image: string;
+  description: string;
 }
 
 function AdminProductsPage() {
-  const { data: products, isLoading } = useProducts()
-  const { data: categories } = useCategories()
-  const deleteProduct = useDeleteProduct()
-  const createProduct = useCreateProduct()
-  const updateProduct = useUpdateProduct()
+  const { data: products, isLoading } = useProducts();
+  const { data: categories } = useCategories();
+  const deleteProduct = useDeleteProduct();
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
 
-  const [showModal, setShowModal] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormState>({
     name: '',
     price: '',
     category: '',
     image: '',
     description: '',
-  })
+  });
 
   const getCategoryName = (categoryId: number) => {
-    return categories?.find((c) => c.id === categoryId)?.name || 'Без категории'
-  }
+    return categories?.find(c => c.id === categoryId)?.name || 'Без категории';
+  };
 
   const handleDelete = (id: number, name: string) => {
     if (confirm(`Удалить товар "${name}"?`)) {
-      deleteProduct.mutate(id)
+      deleteProduct.mutate(id);
     }
-  }
+  };
 
   const handleOpenCreate = () => {
-    setEditingProduct(null)
+    setEditingProduct(null);
     setFormData({
       name: '',
       price: '',
       category: categories?.[0]?.id.toString() || '',
       image: '',
       description: '',
-    })
-    setShowModal(true)
-  }
+    });
+    setShowModal(true);
+  };
 
   const handleOpenEdit = (product: Product) => {
-    setEditingProduct(product)
+    setEditingProduct(product);
     setFormData({
       name: product.name,
       price: product.price.toString(),
       category: product.category.toString(),
       image: product.image,
       description: product.description,
-    })
-    setShowModal(true)
-  }
+    });
+    setShowModal(true);
+  };
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setEditingProduct(null)
+    setShowModal(false);
+    setEditingProduct(null);
     setFormData({
       name: '',
       price: '',
       category: '',
       image: '',
       description: '',
-    })
-  }
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     const data = {
       name: formData.name,
@@ -127,28 +131,28 @@ function AdminProductsPage() {
       category: parseInt(formData.category),
       image: formData.image,
       description: formData.description,
-    }
+    };
 
     if (editingProduct) {
       updateProduct.mutate(
         { id: editingProduct.id, data },
         {
           onSuccess: () => {
-            handleCloseModal()
+            handleCloseModal();
           },
         }
-      )
+      );
     } else {
       createProduct.mutate(data, {
         onSuccess: () => {
-          handleCloseModal()
+          handleCloseModal();
         },
-      })
+      });
     }
-  }
+  };
 
   if (isLoading) {
-    return <div className="text-center py-12">Загрузка товаров...</div>
+    return <div className="text-center py-12">Загрузка товаров...</div>;
   }
 
   return (
@@ -164,7 +168,7 @@ function AdminProductsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
+          {products.map(product => (
             <Card key={product.id} className="p-4">
               <ProductImage src={product.image} alt={product.name} />
               <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
@@ -206,7 +210,7 @@ function AdminProductsPage() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
@@ -217,7 +221,7 @@ function AdminProductsPage() {
                 <input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={e => setFormData({ ...formData, price: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                   min="0"
@@ -228,11 +232,11 @@ function AdminProductsPage() {
                 <label className="block text-sm font-medium mb-1">Категория</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={e => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                 >
-                  {categories?.map((cat) => (
+                  {categories?.map(cat => (
                     <option key={cat.id} value={cat.id}>
                       {cat.icon} {cat.name}
                     </option>
@@ -245,7 +249,7 @@ function AdminProductsPage() {
                 <input
                   type="url"
                   value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  onChange={e => setFormData({ ...formData, image: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   required
                   placeholder="https://example.com/image.jpg"
@@ -256,7 +260,7 @@ function AdminProductsPage() {
                 <label className="block text-sm font-medium mb-1">Описание</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   rows={3}
                   required
@@ -285,5 +289,5 @@ function AdminProductsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

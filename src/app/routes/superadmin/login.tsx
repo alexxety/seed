@@ -1,35 +1,35 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useMutation } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { useSuperAdminAuthStore } from '@/features/superadmin/store'
-import { apiClient } from '@/lib/api-client'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { useSuperAdminAuthStore } from '@/features/superadmin/store';
+import { apiClient } from '@/lib/api-client';
 
 export const Route = createFileRoute('/superadmin/login')({
   component: SuperAdminLoginPage,
-})
+});
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Требуется логин или email'),
   password: z.string().min(6, 'Минимум 6 символов'),
-})
+});
 
-type LoginForm = z.infer<typeof loginSchema>
+type LoginForm = z.infer<typeof loginSchema>;
 
 interface LoginResponse {
-  success: boolean
-  token: string
-  expiresIn: number
+  success: boolean;
+  token: string;
+  expiresIn: number;
 }
 
 function SuperAdminLoginPage() {
-  console.log('🔐 SuperAdminLoginPage rendering')
-  const navigate = useNavigate()
-  const setAuth = useSuperAdminAuthStore((state) => state.setAuth)
+  console.log('🔐 SuperAdminLoginPage rendering');
+  const navigate = useNavigate();
+  const setAuth = useSuperAdminAuthStore(state => state.setAuth);
 
   const {
     register,
@@ -37,28 +37,28 @@ function SuperAdminLoginPage() {
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginForm) => {
       return await apiClient<LoginResponse>('/api/superadmin/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
-      })
+      });
     },
-    onSuccess: (data) => {
-      setAuth(data.token, data.expiresIn)
-      navigate({ to: '/superadmin/shops' })
+    onSuccess: data => {
+      setAuth(data.token, data.expiresIn);
+      navigate({ to: '/superadmin/shops' });
     },
-  })
+  });
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      await loginMutation.mutateAsync(data)
+      await loginMutation.mutateAsync(data);
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('Login failed:', error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
@@ -71,9 +71,7 @@ function SuperAdminLoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-300">
-              Логин или Email
-            </label>
+            <label className="block text-sm font-medium mb-2 text-gray-300">Логин или Email</label>
             <Input
               type="text"
               {...register('email')}
@@ -81,9 +79,7 @@ function SuperAdminLoginPage() {
                 errors.email ? 'border-red-500' : ''
               }`}
             />
-            {errors.email && (
-              <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
           </div>
 
           <div>
@@ -102,9 +98,7 @@ function SuperAdminLoginPage() {
 
           {loginMutation.isError && (
             <div className="bg-red-900/30 border border-red-700 rounded p-3">
-              <p className="text-red-400 text-sm">
-                ❌ Ошибка входа. Проверьте учётные данные.
-              </p>
+              <p className="text-red-400 text-sm">❌ Ошибка входа. Проверьте учётные данные.</p>
             </div>
           )}
 
@@ -124,5 +118,5 @@ function SuperAdminLoginPage() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

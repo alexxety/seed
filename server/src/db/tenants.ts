@@ -194,9 +194,7 @@ export async function createTenant(db: PrismaClient, slug: string, name: string 
     await db.$executeRawUnsafe(
       `CREATE INDEX idx_orders_customer_id ON "${schemaName}".orders(customer_id)`
     );
-    await db.$executeRawUnsafe(
-      `CREATE INDEX idx_orders_status ON "${schemaName}".orders(status)`
-    );
+    await db.$executeRawUnsafe(`CREATE INDEX idx_orders_status ON "${schemaName}".orders(status)`);
     await db.$executeRawUnsafe(`CREATE INDEX idx_orders_paid ON "${schemaName}".orders(paid)`);
     await db.$executeRawUnsafe(
       `CREATE INDEX idx_orders_created_at ON "${schemaName}".orders(created_at DESC)`

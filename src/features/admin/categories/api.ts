@@ -1,17 +1,17 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import type { Category, CategoryFormData } from '@/types'
-import { useAdminAuthStore } from '../auth/store'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { Category, CategoryFormData } from '@/types';
+import { useAdminAuthStore } from '../auth/store';
 
 function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken()
+  const token = useAdminAuthStore.getState().getToken();
   return {
     Authorization: `Bearer ${token}`,
-  }
+  };
 }
 
 export function useCreateCategory() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CategoryFormData) => {
@@ -22,21 +22,21 @@ export function useCreateCategory() {
           headers: getAuthHeaders(),
           body: JSON.stringify(data),
         }
-      )
-      return response.category
+      );
+      return response.category;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
     onError: (error: any) => {
-      console.error('Error creating category:', error)
-      alert(`❌ Ошибка создания категории\n\n${error.message || 'Неизвестная ошибка'}`)
+      console.error('Error creating category:', error);
+      alert(`❌ Ошибка создания категории\n\n${error.message || 'Неизвестная ошибка'}`);
     },
-  })
+  });
 }
 
 export function useUpdateCategory() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CategoryFormData }) => {
@@ -47,37 +47,37 @@ export function useUpdateCategory() {
           headers: getAuthHeaders(),
           body: JSON.stringify(data),
         }
-      )
-      return response.category
+      );
+      return response.category;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
     onError: (error: any) => {
-      console.error('Error updating category:', error)
-      alert(`❌ Ошибка обновления категории\n\n${error.message || 'Неизвестная ошибка'}`)
+      console.error('Error updating category:', error);
+      alert(`❌ Ошибка обновления категории\n\n${error.message || 'Неизвестная ошибка'}`);
     },
-  })
+  });
 }
 
 export function useDeleteCategory() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: number) => {
       await apiClient<{ success: boolean }>(`/api/admin/categories/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
-      })
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
     onError: (error: any) => {
       // Показываем ошибку пользователю
       if (error.message) {
-        alert(error.message)
+        alert(error.message);
       }
     },
-  })
+  });
 }

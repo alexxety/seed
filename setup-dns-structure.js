@@ -52,7 +52,9 @@ async function setupAllDNS() {
 
   console.log('📋 Создаю следующие DNS записи:\n');
   for (const record of records) {
-    console.log(`   → ${record.name === '@' ? 'x-bro.com' : record.name + '.x-bro.com'} - ${record.description}`);
+    console.log(
+      `   → ${record.name === '@' ? 'x-bro.com' : record.name + '.x-bro.com'} - ${record.description}`
+    );
   }
   console.log('');
 

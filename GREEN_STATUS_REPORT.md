@@ -8,14 +8,14 @@
 
 ## 📋 Проверочный Checklist
 
-| # | Задача | Статус | Результат |
-|---|--------|--------|-----------|
-| 1 | Миграция готова к deploy | ✅ | Синтаксис проверен |
-| 2 | UUID механизм единый | ✅ | uuid_generate_v4() везде (8×) |
-| 3 | DDL таблиц проверен | ✅ | Все таблицы корректны |
-| 4 | Grep-аудит prisma вызовов | ✅ | Нет проблемных вызовов |
-| 5 | Imports обновлены | ✅ | Все .js расширения |
-| 6 | Синтаксис JS проверен | ✅ | node --check пройден |
+| #   | Задача                    | Статус | Результат                     |
+| --- | ------------------------- | ------ | ----------------------------- |
+| 1   | Миграция готова к deploy  | ✅     | Синтаксис проверен            |
+| 2   | UUID механизм единый      | ✅     | uuid_generate_v4() везде (8×) |
+| 3   | DDL таблиц проверен       | ✅     | Все таблицы корректны         |
+| 4   | Grep-аудит prisma вызовов | ✅     | Нет проблемных вызовов        |
+| 5   | Imports обновлены         | ✅     | Все .js расширения            |
+| 6   | Синтаксис JS проверен     | ✅     | node --check пройден          |
 
 ---
 
@@ -56,11 +56,13 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
 ### Проверка DDL:
 
 ✅ **Миграция (public.tenants)**:
+
 ```sql
 "id" UUID NOT NULL DEFAULT uuid_generate_v4()
 ```
 
 ✅ **Tenant-схемы (tenants.js)** - 8 таблиц:
+
 ```javascript
 // Все таблицы используют uuid_generate_v4()
 1. products:          id UUID PRIMARY KEY DEFAULT uuid_generate_v4()
@@ -79,7 +81,7 @@ CREATE INDEX "tenants_created_at_idx" ON "tenants"("created_at");
 
 ## 3️⃣ Структура tenant-схемы
 
-### DDL для t_{uuid}:
+### DDL для t\_{uuid}:
 
 ```
 t_{uuid}/
@@ -142,6 +144,7 @@ t_{uuid}/
 ### Результаты аудита:
 
 #### ✅ server/src/db/tenants.js
+
 ```
 ✅ prisma.tenant.* - работа с public.tenants (корректно)
 ✅ prisma.$executeRawUnsafe - DDL операции (корректно)
@@ -149,17 +152,20 @@ t_{uuid}/
 ```
 
 #### ✅ server/src/multitenancy/middleware.js
+
 ```
 ✅ prisma.$extends() - создание tenant client (корректно)
 ✅ prisma.$transaction() - SET LOCAL search_path (корректно)
 ```
 
 #### ✅ server/src/multitenancy/tenant-context.js
+
 ```
 ✅ getTenantBySlug() - работа через functions (корректно)
 ```
 
 #### ✅ database.js (legacy)
+
 ```
 ✅ Прямые вызовы prisma.* для старых таблиц
    (orders, products, categories, settings, shops)
@@ -168,6 +174,7 @@ t_{uuid}/
 ```
 
 #### ✅ server.js
+
 ```
 ✅ НЕТ прямых вызовов prisma в роутах
 ✅ Все идёт через функции из database.js или multitenancy
@@ -339,6 +346,7 @@ psql $DATABASE_URL -c "\dt t_abc_123_def_456_789.*"
 #### Тест 1: Логин супер-админа
 
 **Request**:
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
   -H "Content-Type: application/json" \
@@ -346,6 +354,7 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
 ```
 
 **Expected Response**:
+
 ```json
 {
   "success": true,
@@ -357,12 +366,14 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/login \
 #### Тест 2: Список tenants
 
 **Request**:
+
 ```bash
 curl https://dev-admin.x-bro.com/api/superadmin/tenants \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
 **Expected Response**:
+
 ```json
 {
   "success": true,
@@ -383,6 +394,7 @@ curl https://dev-admin.x-bro.com/api/superadmin/tenants \
 #### Тест 3: Создать tenant
 
 **Request**:
+
 ```bash
 curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
   -H "Authorization: Bearer <TOKEN>" \
@@ -391,6 +403,7 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
 ```
 
 **Expected Response**:
+
 ```json
 {
   "success": true,
@@ -407,12 +420,14 @@ curl -X POST https://dev-admin.x-bro.com/api/superadmin/tenants \
 #### Тест 4: Получить tenant по slug
 
 **Request**:
+
 ```bash
 curl https://dev-admin.x-bro.com/api/superadmin/tenants/demo \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
 **Expected Response**:
+
 ```json
 {
   "success": true,
@@ -431,11 +446,13 @@ curl https://dev-admin.x-bro.com/api/superadmin/tenants/demo \
 #### Тест 5: Без авторизации (401)
 
 **Request**:
+
 ```bash
 curl https://dev-admin.x-bro.com/api/superadmin/tenants
 ```
 
 **Expected Response**:
+
 ```json
 {
   "error": "Токен не предоставлен"
@@ -524,6 +541,7 @@ WHERE tc.constraint_type = 'FOREIGN KEY'
 ### Ошибка: "Extension uuid-ossp does not exist"
 
 **Решение**:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ```
@@ -531,6 +549,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ### Ошибка: "Tenant с slug 'demo' уже существует"
 
 **Решение**: Используйте другой slug или удалите существующий:
+
 ```sql
 -- ОСТОРОЖНО: Удаляет tenant и его схему!
 DELETE FROM public.tenants WHERE slug = 'demo';
@@ -540,6 +559,7 @@ DROP SCHEMA IF EXISTS t_abc_123_def_456_789 CASCADE;
 ### Сервер не запускается
 
 **Проверка**:
+
 ```bash
 # Синтаксис
 node --check server.js
@@ -573,10 +593,12 @@ pm2 logs telegram-shop-dev --err --lines 100
 ## 📊 Статистика проекта
 
 **Коммиты**:
+
 - `c69cdf3` - критические исправления (TS→JS, UUID, search_path)
 - `56bf296` - документация
 
 **Файлы**:
+
 - 8 files changed, 936 insertions(+), 77 deletions(-)
 
 **Готово к deployment**: ✅ ДА

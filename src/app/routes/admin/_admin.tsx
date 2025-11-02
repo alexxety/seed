@@ -1,17 +1,17 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-import { useAdminAuthStore } from '@/features/admin/auth/store'
-import { AdminNav } from '@/components/admin/AdminNav'
-import { SessionTimer } from '@/components/admin/SessionTimer'
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { useAdminAuthStore } from '@/features/admin/auth/store';
+import { AdminNav } from '@/components/admin/AdminNav';
+import { SessionTimer } from '@/components/admin/SessionTimer';
 
 export const Route = createFileRoute('/admin/_admin')({
   beforeLoad: () => {
-    const isAuthenticated = useAdminAuthStore.getState().isAuthenticated()
+    const isAuthenticated = useAdminAuthStore.getState().isAuthenticated();
     if (!isAuthenticated) {
-      throw redirect({ to: '/admin/login' })
+      throw redirect({ to: '/admin/login' });
     }
   },
   component: AdminLayout,
-})
+});
 
 function AdminLayout() {
   return (
@@ -24,5 +24,5 @@ function AdminLayout() {
         <Outlet />
       </div>
     </div>
-  )
+  );
 }

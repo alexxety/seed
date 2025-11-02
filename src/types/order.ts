@@ -15,7 +15,7 @@ export interface Customer {
   telegramLastName?: string;
 }
 
-export interface Order {
+export interface CreateOrderRequest {
   customer: Customer;
   items: CartItem[];
   total: number;

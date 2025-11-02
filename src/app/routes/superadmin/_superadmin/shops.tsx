@@ -69,7 +69,7 @@ function ShopsPage() {
         `Вы уверены, что хотите ${newStatus === 'blocked' ? 'заблокировать' : 'активировать'} магазин ${shop.subdomain}.x-bro.com?`
       )
     ) {
-      updateStatusMutation.mutate({ id: shop.id, status: newStatus });
+      updateStatusMutation.mutate({ id: Number(shop.id), status: newStatus });
     }
   };
 
@@ -79,7 +79,7 @@ function ShopsPage() {
         `⚠️ ВНИМАНИЕ! Вы собираетесь удалить магазин ${shop.subdomain}.x-bro.com и его DNS запись.\n\nЭто действие необратимо!\n\nПродолжить?`
       )
     ) {
-      deleteMutation.mutate(shop.id);
+      deleteMutation.mutate(Number(shop.id));
     }
   };
 

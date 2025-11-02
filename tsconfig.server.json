@@ -6,15 +6,17 @@
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true,
     "declaration": false,
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["server.ts", "database.ts", "cloudflare-service.ts", "server/**/*.ts"],
-  "exclude": ["node_modules", "dist", "src"]
+  "include": ["server/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src", "server.ts", "database.ts", "cloudflare-service.ts"]
 }

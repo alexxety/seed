@@ -60,5 +60,6 @@ export interface ProductFormData {
 
 export interface CategoryFormData {
   name: string;
-  emoji: string;
+  emoji?: string;
+  icon: string;
 }

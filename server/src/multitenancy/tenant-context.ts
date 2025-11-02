@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { getTenantBySlug } from '../db/tenants';
-import { getGlobalPrisma } from './middleware';
+import { getTenantBySlug } from '../db/tenants.js';
+import { getGlobalPrisma } from './middleware.js';
 
 export async function resolveTenant(req: Request) {
   console.log(`[resolveTenant] Headers:`, {

@@ -40,20 +40,20 @@ import {
   updateShopStatus,
   deleteShop,
   isSubdomainAvailable,
-} from './database';
+} from './database.js';
 
-import { createShopDNS, deleteShopDNS } from './cloudflare-service';
+import { createShopDNS, deleteShopDNS } from './cloudflare-service.js';
 
 import {
   createTenant,
   getAllTenants,
   getTenantBySlug,
   getAllTenantsAsShops,
-} from './server/src/db/tenants';
-import { setTenantContext } from './server/src/multitenancy/tenant-context';
-import { attachTenantDB, getGlobalPrisma } from './server/src/multitenancy/middleware';
+} from './server/src/db/tenants.js';
+import { setTenantContext } from './server/src/multitenancy/tenant-context.js';
+import { attachTenantDB, getGlobalPrisma } from './server/src/multitenancy/middleware.js';
 
-import storefrontRouter from './server/src/storefront/router';
+import storefrontRouter from './server/src/storefront/router.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1025,7 +1025,7 @@ app.get('*', (req: Request, res: Response) => {
   try {
     await initializeSettings();
   } catch (error) {
-    logger.error('Failed to initialize settings:', error);
+    logger.error({ err: error }, 'Failed to initialize settings');
   }
 })();
 
@@ -1055,10 +1055,10 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 process.on('uncaughtException', error => {
-  logger.error('❌ Uncaught Exception:', error);
+  logger.error({ err: error }, '❌ Uncaught Exception');
   gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error({ reason, promise }, '❌ Unhandled Rejection');
 });

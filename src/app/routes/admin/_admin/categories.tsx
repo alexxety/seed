@@ -17,6 +17,7 @@ export const Route = createFileRoute('/admin/_admin/categories')({
 interface CategoryFormState {
   name: string;
   emoji: string;
+  icon: string;
 }
 
 function AdminCategoriesPage() {
@@ -31,6 +32,7 @@ function AdminCategoriesPage() {
   const [formData, setFormData] = useState<CategoryFormState>({
     name: '',
     emoji: '',
+    icon: '',
   });
 
   // Подсчитываем количество товаров в каждой категории
@@ -70,15 +72,18 @@ function AdminCategoriesPage() {
     setFormData({
       name: '',
       emoji: '',
+      icon: '',
     });
     setShowModal(true);
   };
 
   const handleOpenEdit = (category: Category) => {
     setEditingCategory(category);
+    const icon = category.emoji || category.icon;
     setFormData({
       name: category.name,
-      emoji: category.emoji || category.icon,
+      emoji: icon,
+      icon: icon,
     });
     setShowModal(true);
   };
@@ -89,6 +94,7 @@ function AdminCategoriesPage() {
     setFormData({
       name: '',
       emoji: '',
+      icon: '',
     });
   };
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
-  PORT: z.string().transform(Number).default('3001'),
+  PORT: z.string().default('3001').transform(Number),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL обязателен'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET должен быть минимум 32 символа'),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
@@ -20,7 +20,7 @@ export function validateEnv() {
   } catch (error) {
     console.error('❌ Ошибка валидации ENV:');
     if (error instanceof z.ZodError) {
-      error.errors.forEach(err => {
+      error.issues.forEach((err: z.ZodIssue) => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
     }

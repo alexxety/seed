@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, Router } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { generateSitemap } from './service';
+import { generateSitemap } from './service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,7 +48,7 @@ router.get('/sitemap.xml', async (req: Request, res: Response, next: NextFunctio
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-    urls.forEach(url => {
+    urls.forEach((url: { loc: string; lastmod: string; priority: number }) => {
       xml += '  <url>\n';
       xml += `    <loc>${url.loc}</loc>\n`;
       xml += `    <lastmod>${url.lastmod}</lastmod>\n`;

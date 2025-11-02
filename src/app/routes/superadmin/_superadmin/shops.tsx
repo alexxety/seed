@@ -191,14 +191,28 @@ function ShopsPage() {
                       <p className="text-gray-400">Telegram Admin ID:</p>
                       <p className="text-white font-mono">{shop.adminTelegramId}</p>
                     </div>
-                    <div>
-                      <p className="text-gray-400">Chat ID:</p>
-                      <p className="text-white font-mono">{shop.chatId}</p>
-                    </div>
+                    {shop.chatId && (
+                      <div>
+                        <p className="text-gray-400">Chat ID:</p>
+                        <p className="text-white font-mono">{shop.chatId}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-gray-400">Bot Token:</p>
                       <p className="text-white font-mono text-xs">{shop.botTokenMasked}</p>
                     </div>
+                    {shop.slug && (
+                      <div>
+                        <p className="text-gray-400">Tenant Slug:</p>
+                        <p className="text-white font-mono">{shop.slug}</p>
+                      </div>
+                    )}
+                    {shop.schema && (
+                      <div>
+                        <p className="text-gray-400">Database Schema:</p>
+                        <p className="text-white font-mono text-xs">{shop.schema}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Dates */}

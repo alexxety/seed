@@ -1,12 +1,12 @@
 import { apiClient } from '@/lib/api-client'
 
 export interface Shop {
-  id: number
+  id: string | number // Support both UUID (new tenants) and number (legacy)
   subdomain: string
   ownerName: string
   ownerEmail: string
   ownerPhone: string | null
-  chatId: string
+  chatId?: string // Optional for new tenants
   adminTelegramId: string
   status: 'active' | 'blocked' | 'pending'
   plan: 'free' | 'basic' | 'pro'
@@ -14,6 +14,11 @@ export interface Shop {
   createdAt: string
   updatedAt: string
   botTokenMasked?: string
+  // New tenant fields
+  name?: string
+  slug?: string
+  schema?: string
+  domain?: string
 }
 
 export interface ShopsResponse {
@@ -39,9 +44,10 @@ export interface UpdateShopData {
 
 /**
  * Get all shops (requires super-admin auth)
+ * Now reads from tenants table for multi-tenancy support
  */
 export async function getAllShops(token: string): Promise<Shop[]> {
-  const data = await apiClient<ShopsResponse>('/api/admin/shops', {
+  const data = await apiClient<ShopsResponse>('/api/superadmin/shops', {
     headers: {
       Authorization: `Bearer ${token}`,
     },

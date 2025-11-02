@@ -1,16 +1,13 @@
-// Database layer using Prisma ORM with PostgreSQL
-require('dotenv/config');
-const { PrismaClient } = require('@prisma/client');
-const crypto = require('crypto');
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Encryption settings for sensitive data
 const ENCRYPTION_KEY = process.env.JWT_SECRET || 'default-encryption-key-change-in-production';
 const ALGORITHM = 'aes-256-cbc';
 
-// Helper functions for encryption
-function encrypt(text) {
+function encrypt(text: string): string {
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -19,7 +16,7 @@ function encrypt(text) {
   return iv.toString('hex') + ':' + encrypted;
 }
 
-function decrypt(text) {
+function decrypt(text: string): string {
   try {
     const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
     const parts = text.split(':');
@@ -31,21 +28,17 @@ function decrypt(text) {
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    return text; // Return original if decryption fails
+    return text;
   }
 }
 
-// ==================== ORDERS ====================
-
-// Function to generate order number
-async function generateOrderNumber() {
+async function generateOrderNumber(): Promise<string> {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const todayPrefix = `${year}${month}${day}`;
 
-  // Get or create counter
   let counter = await prisma.orderCounter.findUnique({
     where: { id: 1 },
   });
@@ -56,19 +49,16 @@ async function generateOrderNumber() {
     });
   }
 
-  // Increment counter
   counter = await prisma.orderCounter.update({
     where: { id: 1 },
     data: { counter: { increment: 1 } },
   });
 
-  // Format: YYYYMMDD-NNNN
   const orderNumber = `${todayPrefix}-${String(counter.counter).padStart(4, '0')}`;
   return orderNumber;
 }
 
-// Function to create a new order
-async function createOrder(customer, items, total) {
+export async function createOrder(customer: any, items: any, total: number) {
   const orderNumber = await generateOrderNumber();
 
   const order = await prisma.order.create({
@@ -78,7 +68,7 @@ async function createOrder(customer, items, total) {
       phone: customer.phone,
       deliveryType: customer.deliveryType,
       deliveryDetails: customer.deliveryDetails,
-      items: items, // Prisma handles JSON automatically
+      items: items,
       total,
       telegramUsername: customer.telegramUsername || null,
       telegramId: customer.telegramId || null,
@@ -93,79 +83,64 @@ async function createOrder(customer, items, total) {
   };
 }
 
-// Function to get order by number
-async function getOrderByNumber(orderNumber) {
-  const order = await prisma.order.findUnique({
+export async function getOrderByNumber(orderNumber: string) {
+  return await prisma.order.findUnique({
     where: { orderNumber },
   });
-  return order;
 }
 
-// Function to get order by ID
-async function getOrderById(id) {
-  const order = await prisma.order.findUnique({
+export async function getOrderById(id: number) {
+  return await prisma.order.findUnique({
     where: { id },
   });
-  return order;
 }
 
-// Function to get all orders
-async function getAllOrders(limit = 100) {
-  const orders = await prisma.order.findMany({
+export async function getAllOrders(limit = 100) {
+  return await prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
     take: limit,
   });
-  return orders;
 }
 
-// Function to update order status
-async function updateOrderStatus(id, status) {
+export async function updateOrderStatus(id: number, status: string) {
   const validStatuses = ['new', 'in_progress', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     throw new Error('Invalid order status');
   }
 
-  const order = await prisma.order.update({
+  return await prisma.order.update({
     where: { id },
     data: { status },
   });
-
-  return order;
 }
 
-// Function to delete order
-async function deleteOrder(id) {
+export async function deleteOrder(id: number) {
   await prisma.order.delete({
     where: { id },
   });
   return { success: true };
 }
 
-// ==================== CATEGORIES ====================
-
-async function getAllCategories() {
+export async function getAllCategories() {
   return await prisma.category.findMany({
     orderBy: { id: 'asc' },
   });
 }
 
-async function createCategory(name, icon) {
-  const category = await prisma.category.create({
+export async function createCategory(name: string, icon: string) {
+  return await prisma.category.create({
     data: { name, icon },
   });
-  return category;
 }
 
-async function updateCategory(id, name, icon) {
-  const category = await prisma.category.update({
+export async function updateCategory(id: number, name: string, icon: string) {
+  return await prisma.category.update({
     where: { id },
     data: { name, icon },
   });
-  return category;
 }
 
-async function deleteCategory(id) {
-  // Check if there are products in this category
+export async function deleteCategory(id: number) {
   const productsCount = await prisma.product.count({
     where: {
       categoryId: id,
@@ -184,9 +159,7 @@ async function deleteCategory(id) {
   });
 }
 
-// ==================== PRODUCTS ====================
-
-async function getAllProducts() {
+export async function getAllProducts() {
   const products = await prisma.product.findMany({
     where: { isActive: true },
     include: {
@@ -200,12 +173,11 @@ async function getAllProducts() {
     orderBy: { id: 'asc' },
   });
 
-  // Map to match old API format
-  return products.map((p) => ({
+  return products.map(p => ({
     id: p.id,
     name: p.name,
     price: p.price,
-    category: p.categoryId, // For frontend compatibility
+    category: p.categoryId,
     category_id: p.categoryId,
     category_name: p.category.name,
     category_icon: p.category.icon,
@@ -217,15 +189,14 @@ async function getAllProducts() {
   }));
 }
 
-async function getProductById(id) {
-  const product = await prisma.product.findUnique({
+export async function getProductById(id: number) {
+  return await prisma.product.findUnique({
     where: { id },
   });
-  return product;
 }
 
-async function createProduct(product) {
-  const newProduct = await prisma.product.create({
+export async function createProduct(product: any) {
+  return await prisma.product.create({
     data: {
       name: product.name,
       price: product.price,
@@ -234,11 +205,10 @@ async function createProduct(product) {
       description: product.description,
     },
   });
-  return newProduct;
 }
 
-async function updateProduct(id, product) {
-  const updatedProduct = await prisma.product.update({
+export async function updateProduct(id: number, product: any) {
+  return await prisma.product.update({
     where: { id },
     data: {
       name: product.name,
@@ -248,38 +218,28 @@ async function updateProduct(id, product) {
       description: product.description,
     },
   });
-  return updatedProduct;
 }
 
-async function deleteProduct(id) {
-  // Soft delete - mark as inactive
+export async function deleteProduct(id: number) {
   await prisma.product.update({
     where: { id },
     data: { isActive: false },
   });
 }
 
-// ==================== SETTINGS ====================
-
-// Get all settings
-async function getAllSettings() {
+export async function getAllSettings() {
   const settings = await prisma.setting.findMany({
-    orderBy: [
-      { category: 'asc' },
-      { label: 'asc' }
-    ]
+    orderBy: [{ category: 'asc' }, { label: 'asc' }],
   });
 
-  // Decrypt encrypted values and mask secrets for display
   return settings.map(setting => {
     if (setting.isEncrypted && setting.value) {
       const decryptedValue = decrypt(setting.value);
-      // For secret type, mask the value for display
       if (setting.type === 'secret') {
         return {
           ...setting,
           displayValue: '••••' + decryptedValue.slice(-4),
-          value: decryptedValue // Full value for backend use
+          value: decryptedValue,
         };
       }
       return { ...setting, value: decryptedValue };
@@ -288,11 +248,10 @@ async function getAllSettings() {
   });
 }
 
-// Get settings by category
-async function getSettingsByCategory(category) {
+export async function getSettingsByCategory(category: string) {
   const settings = await prisma.setting.findMany({
     where: { category },
-    orderBy: { label: 'asc' }
+    orderBy: { label: 'asc' },
   });
 
   return settings.map(setting => {
@@ -302,7 +261,7 @@ async function getSettingsByCategory(category) {
         return {
           ...setting,
           displayValue: '••••' + decryptedValue.slice(-4),
-          value: decryptedValue
+          value: decryptedValue,
         };
       }
       return { ...setting, value: decryptedValue };
@@ -311,10 +270,9 @@ async function getSettingsByCategory(category) {
   });
 }
 
-// Get single setting by key
-async function getSetting(key) {
+export async function getSetting(key: string) {
   const setting = await prisma.setting.findUnique({
-    where: { key }
+    where: { key },
   });
 
   if (!setting) return null;
@@ -326,14 +284,12 @@ async function getSetting(key) {
   return setting;
 }
 
-// Get setting value by key (returns just the value)
-async function getSettingValue(key, defaultValue = null) {
+export async function getSettingValue(key: string, defaultValue: any = null) {
   const setting = await getSetting(key);
   return setting ? setting.value : defaultValue;
 }
 
-// Create new setting
-async function createSetting(data) {
+export async function createSetting(data: any) {
   const settingData = {
     key: data.key,
     value: data.isEncrypted ? encrypt(data.value) : data.value,
@@ -345,17 +301,14 @@ async function createSetting(data) {
     isEncrypted: data.isEncrypted || false,
   };
 
-  const setting = await prisma.setting.create({
-    data: settingData
+  return await prisma.setting.create({
+    data: settingData,
   });
-
-  return setting;
 }
 
-// Update setting
-async function updateSetting(key, value) {
+export async function updateSetting(key: string, value: string) {
   const setting = await prisma.setting.findUnique({
-    where: { key }
+    where: { key },
   });
 
   if (!setting) {
@@ -364,23 +317,20 @@ async function updateSetting(key, value) {
 
   const updatedValue = setting.isEncrypted ? encrypt(value) : value;
 
-  const updated = await prisma.setting.update({
+  return await prisma.setting.update({
     where: { key },
-    data: { value: updatedValue }
+    data: { value: updatedValue },
   });
-
-  return updated;
 }
 
-// Update multiple settings at once
-async function updateSettings(updates) {
+export async function updateSettings(updates: any[]) {
   const results = [];
 
   for (const update of updates) {
     try {
       const result = await updateSetting(update.key, update.value);
       results.push({ success: true, key: update.key, setting: result });
-    } catch (error) {
+    } catch (error: any) {
       results.push({ success: false, key: update.key, error: error.message });
     }
   }
@@ -388,15 +338,13 @@ async function updateSettings(updates) {
   return results;
 }
 
-// Delete setting
-async function deleteSetting(key) {
+export async function deleteSetting(key: string) {
   await prisma.setting.delete({
-    where: { key }
+    where: { key },
   });
 }
 
-// Initialize default settings from environment variables
-async function initializeSettings() {
+export async function initializeSettings() {
   const defaultSettings = [
     {
       key: 'telegram.bot_token',
@@ -452,7 +400,7 @@ async function initializeSettings() {
 
   for (const settingData of defaultSettings) {
     const existing = await prisma.setting.findUnique({
-      where: { key: settingData.key }
+      where: { key: settingData.key },
     });
 
     if (!existing) {
@@ -464,14 +412,10 @@ async function initializeSettings() {
   console.log('✅ Settings initialization completed');
 }
 
-// ==================== SHOPS ====================
-
-// Create new shop
-async function createShop(shopData) {
-  // Encrypt bot token
+export async function createShop(shopData: any) {
   const encryptedToken = encrypt(shopData.botToken);
 
-  const shop = await prisma.shop.create({
+  return await prisma.shop.create({
     data: {
       subdomain: shopData.subdomain.toLowerCase(),
       ownerName: shopData.ownerName,
@@ -485,12 +429,9 @@ async function createShop(shopData) {
       expiresAt: shopData.expiresAt || null,
     },
   });
-
-  return shop;
 }
 
-// Get all shops
-async function getAllShops(options = {}) {
+export async function getAllShops(options: any = {}) {
   const { status, orderBy = 'createdAt', order = 'desc' } = options;
 
   const where = status ? { status } : {};
@@ -500,7 +441,6 @@ async function getAllShops(options = {}) {
     orderBy: { [orderBy]: order },
   });
 
-  // Decrypt bot tokens
   return shops.map(shop => ({
     ...shop,
     botToken: decrypt(shop.botToken),
@@ -508,8 +448,7 @@ async function getAllShops(options = {}) {
   }));
 }
 
-// Get shop by subdomain
-async function getShopBySubdomain(subdomain) {
+export async function getShopBySubdomain(subdomain: string) {
   const shop = await prisma.shop.findUnique({
     where: { subdomain: subdomain.toLowerCase() },
   });
@@ -522,8 +461,7 @@ async function getShopBySubdomain(subdomain) {
   };
 }
 
-// Get shop by ID
-async function getShopById(id) {
+export async function getShopById(id: number) {
   const shop = await prisma.shop.findUnique({
     where: { id },
   });
@@ -536,16 +474,13 @@ async function getShopById(id) {
   };
 }
 
-// Update shop
-async function updateShop(id, updates) {
+export async function updateShop(id: number, updates: any) {
   const updateData = { ...updates };
 
-  // If botToken is being updated, encrypt it
   if (updateData.botToken) {
     updateData.botToken = encrypt(updateData.botToken);
   }
 
-  // Ensure subdomain is lowercase
   if (updateData.subdomain) {
     updateData.subdomain = updateData.subdomain.toLowerCase();
   }
@@ -561,72 +496,30 @@ async function updateShop(id, updates) {
   };
 }
 
-// Update shop status
-async function updateShopStatus(id, status) {
+export async function updateShopStatus(id: number, status: string) {
   const validStatuses = ['active', 'blocked', 'pending'];
   if (!validStatuses.includes(status)) {
     throw new Error('Invalid shop status');
   }
 
-  const shop = await prisma.shop.update({
+  return await prisma.shop.update({
     where: { id },
     data: { status },
   });
-
-  return shop;
 }
 
-// Delete shop
-async function deleteShop(id) {
+export async function deleteShop(id: number) {
   await prisma.shop.delete({
     where: { id },
   });
   return { success: true };
 }
 
-// Check if subdomain is available
-async function isSubdomainAvailable(subdomain) {
+export async function isSubdomainAvailable(subdomain: string) {
   const existing = await prisma.shop.findUnique({
     where: { subdomain: subdomain.toLowerCase() },
   });
   return !existing;
 }
 
-// Export database client and functions
-module.exports = {
-  prisma,
-  db: prisma, // Alias for compatibility
-  createOrder,
-  getOrderByNumber,
-  getOrderById,
-  getAllOrders,
-  updateOrderStatus,
-  deleteOrder,
-  getAllCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getAllSettings,
-  getSettingsByCategory,
-  getSetting,
-  getSettingValue,
-  createSetting,
-  updateSetting,
-  updateSettings,
-  deleteSetting,
-  initializeSettings,
-  // Shops
-  createShop,
-  getAllShops,
-  getShopBySubdomain,
-  getShopById,
-  updateShop,
-  updateShopStatus,
-  deleteShop,
-  isSubdomainAvailable,
-};
+export { prisma, prisma as db };

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'telegram-shop-prod',
-      script: './server.js',
+      script: './dist/server.js',
       cwd: '/var/www/telegram-shop',
       instances: 1,
       exec_mode: 'fork',
@@ -11,7 +11,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3001
       },
       error_file: '/var/log/pm2/telegram-shop-prod-error.log',
       out_file: '/var/log/pm2/telegram-shop-prod-out.log',
@@ -24,7 +24,7 @@ module.exports = {
     },
     {
       name: 'telegram-shop-dev',
-      script: './server.js',
+      script: './dist/server.js',
       cwd: '/var/www/telegram-shop-dev',
       instances: 1,
       exec_mode: 'fork',

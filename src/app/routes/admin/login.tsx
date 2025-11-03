@@ -12,7 +12,7 @@ export const Route = createFileRoute('/admin/login')({
 });
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Требуется логин или email'),
+  username: z.string().min(1, 'Требуется имя пользователя'),
   password: z.string().min(6, 'Минимум 6 символов'),
 });
 
@@ -46,13 +46,13 @@ function AdminLoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Логин или Email</label>
+            <label className="block text-sm font-medium mb-2">Имя пользователя</label>
             <Input
               type="text"
-              {...register('email')}
-              className={errors.email ? 'border-red-500' : ''}
+              {...register('username')}
+              className={errors.username ? 'border-red-500' : ''}
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
           </div>
 
           <div>

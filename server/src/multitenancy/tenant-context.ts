@@ -3,27 +3,19 @@ import { getTenantBySlug } from '../db/tenants.js';
 import { getGlobalPrisma } from './middleware.js';
 
 export async function resolveTenant(req: Request) {
-  console.log(`[resolveTenant] Headers:`, {
-    host: req.headers.host,
-    'x-tenant': req.headers['x-tenant'],
-  });
-
   const db = getGlobalPrisma();
 
   const tenantHeader = req.headers['x-tenant'] as string | undefined;
   if (tenantHeader) {
-    console.log(`[resolveTenant] Найден X-Tenant заголовок: ${tenantHeader}`);
     const tenant = await getTenantBySlug(db, tenantHeader);
     if (!tenant) {
       throw new Error(`Tenant "${tenantHeader}" не найден`);
     }
-    console.log(`[resolveTenant] Tenant найден:`, tenant);
     return tenant;
   }
 
   const host = req.headers.host || '';
   const parts = host.split('.');
-  console.log(`[resolveTenant] Host parts:`, parts);
 
   const infraDomains = ['www', 'admin', 'seed', 'dev', 'dev-admin', 'deva'];
 
@@ -65,11 +57,12 @@ export async function setTenantContext(req: Request, res: Response, next: NextFu
 
     next();
   } catch (error: any) {
-    console.error(`❌ Ошибка определения tenant: ${error.message}`);
-    return res.status(404).json({
-      error: 'Tenant не найден',
-      message: error.message,
-    });
+    // If there's an error (e.g., database unavailable), set tenant to null and continue
+    // This allows infrastructure subdomains and localhost to work even if DB is down
+    console.error(`⚠️  Ошибка определения tenant (продолжаем без tenant): ${error.message}`);
+    (req as any).context = (req as any).context || {};
+    (req as any).context.tenant = null;
+    next();
   }
 }
 

@@ -49,14 +49,20 @@ import {
   getAllTenants,
   getTenantBySlug,
   getAllTenantsAsShops,
+  isSlugAvailable,
 } from './server/src/db/tenants.js';
 import { setTenantContext } from './server/src/multitenancy/tenant-context.js';
 import { attachTenantDB, getGlobalPrisma } from './server/src/multitenancy/middleware.js';
+import { getAllProductsWithPrices } from './server/src/db/database-tenant.js';
 
 import storefrontRouter from './server/src/storefront/router.js';
+import tenantAdminRouter from './server/src/tenant-admin/router.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Static files directory (SPA frontend built by Vite → web-dist → dist/public)
+const STATIC_DIR = path.join(__dirname, 'public');
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
@@ -135,7 +141,7 @@ const generalLimiter = rateLimit({
 
 app.use(express.json());
 app.use(generalLimiter);
-app.use(express.static('public'));
+app.use(express.static('static-assets')); // Old public assets (images, etc)
 
 // Health check (BEFORE tenant middleware)
 app.get('/health', (req: Request, res: Response) => {
@@ -670,11 +676,36 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req: Request, 
   }
 });
 
-// Products API
+// Products API (tenant-aware)
 app.get('/api/products', async (req: Request, res: Response) => {
   try {
-    const products = await getAllProducts();
-    res.json({ success: true, products });
+    const db = (req as any).db;
+    const tenant = (req as any).context?.tenant;
+
+    // If no tenant context, return empty array (infrastructure domain)
+    if (!tenant || !db) {
+      return res.json({ success: true, products: [] });
+    }
+
+    const products = await getAllProductsWithPrices(db);
+
+    // Transform to match old API format
+    const formattedProducts = products.map((p, index) => ({
+      id: index + 1, // Legacy integer ID for frontend compatibility
+      name: p.name,
+      price: Number(p.price),
+      category: 1, // Legacy category_id
+      category_id: 1,
+      category_name: p.category_name || p.category,
+      category_icon: p.category_name === 'Автоцветы' ? '🌱' : '🌿',
+      image: p.image,
+      description: p.description,
+      is_active: p.is_active,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+    }));
+
+    res.json({ success: true, products: formattedProducts });
   } catch (error) {
     logger.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -835,7 +866,7 @@ app.put('/api/admin/settings', authenticateToken, async (req: Request, res: Resp
   }
 });
 
-// Shops API
+// Shops API (tenant-aware)
 app.get('/api/shops/check/:subdomain', async (req: Request, res: Response) => {
   try {
     const { subdomain } = req.params;
@@ -854,7 +885,7 @@ app.get('/api/shops/check/:subdomain', async (req: Request, res: Response) => {
       });
     }
 
-    const reserved = ['www', 'api', 'admin', 'seed', 'deva', 'mail', 'ftp', 'smtp'];
+    const reserved = ['www', 'api', 'admin', 'seed', 'dev', 'dev-admin', 'deva', 'mail', 'ftp', 'smtp'];
     if (reserved.includes(subdomain.toLowerCase())) {
       return res.json({
         available: false,
@@ -862,9 +893,10 @@ app.get('/api/shops/check/:subdomain', async (req: Request, res: Response) => {
       });
     }
 
-    const dbAvailable = await isSubdomainAvailable(subdomain);
+    const db = getGlobalPrisma();
+    const available = await isSlugAvailable(db, subdomain);
 
-    res.json({ available: dbAvailable });
+    res.json({ available });
   } catch (error) {
     logger.error('Error checking subdomain:', error);
     res.status(500).json({ error: 'Ошибка проверки поддомена' });
@@ -873,44 +905,37 @@ app.get('/api/shops/check/:subdomain', async (req: Request, res: Response) => {
 
 app.post('/api/shops/register', async (req: Request, res: Response) => {
   try {
-    const { subdomain, ownerName, ownerEmail, ownerPhone, botToken, chatId, adminTelegramId } =
-      req.body;
+    const { subdomain, name } = req.body;
 
-    if (!subdomain || !ownerName || !ownerEmail || !botToken || !chatId || !adminTelegramId) {
-      return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+    if (!subdomain) {
+      return res.status(400).json({ error: 'Поддомен обязателен' });
     }
 
-    const available = await isSubdomainAvailable(subdomain);
+    const db = getGlobalPrisma();
+    const available = await isSlugAvailable(db, subdomain);
     if (!available) {
       return res.status(400).json({ error: 'Этот поддомен уже занят' });
     }
 
-    const dnsResult = await createShopDNS(subdomain);
-    if (!dnsResult.success) {
-      return res.status(400).json({ error: dnsResult.error || 'Не удалось создать DNS запись' });
-    }
+    // Create DNS record (optional, commented for dev)
+    // const dnsResult = await createShopDNS(subdomain);
+    // if (!dnsResult.success) {
+    //   return res.status(400).json({ error: dnsResult.error || 'Не удалось создать DNS запись' });
+    // }
 
-    const shop = await createShop({
-      subdomain,
-      ownerName,
-      ownerEmail,
-      ownerPhone,
-      botToken,
-      chatId,
-      adminTelegramId,
-      status: 'active',
-      plan: 'free',
-    });
+    // Create tenant with schema
+    const tenant = await createTenant(db, subdomain, name || null);
 
     res.json({
       success: true,
       shop: {
-        id: shop.id,
-        subdomain: shop.subdomain,
-        url: `https://${shop.subdomain}.x-bro.com`,
-        status: shop.status,
+        id: tenant.id,
+        subdomain: tenant.slug,
+        url: `https://${tenant.slug}.x-bro.com`,
+        status: 'active',
+        schema: tenant.schema,
       },
-      message: `Магазин успешно создан! Он будет доступен через 2-3 минуты по адресу: https://${shop.subdomain}.x-bro.com`,
+      message: `Магазин успешно создан! Используйте X-Tenant: ${tenant.slug} для доступа к API на DEV`,
     });
   } catch (error: any) {
     logger.error('Error registering shop:', error);
@@ -1004,6 +1029,18 @@ app.delete('/api/admin/shops/:id', authenticateToken, async (req: Request, res: 
   }
 });
 
+// Tenant Admin API (MUST be BEFORE storefront router)
+// Routes: /admin/*
+app.use('/admin', (req: Request, res: Response, next: NextFunction) => {
+  if ((req as any).context && (req as any).context.tenant) {
+    return tenantAdminRouter(req, res, next);
+  }
+  return res.status(404).json({
+    error: 'Not Found',
+    message: 'Tenant admin requires tenant context',
+  });
+});
+
 // Storefront router (SEO endpoints: robots.txt, sitemap.xml - MUST be BEFORE express.static)
 app.use((req: Request, res: Response, next: NextFunction) => {
   if ((req as any).context && (req as any).context.tenant) {
@@ -1012,12 +1049,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Static files (admin SPA) - MUST be AFTER storefront router
-app.use(express.static('dist'));
+// Static files (SPA frontend) - MUST be AFTER storefront router
+app.use(express.static(STATIC_DIR));
 
-// SPA fallback
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// SPA fallback (all unmatched routes serve index.html)
+app.get('*', (_req: Request, res: Response) => {
+  res.sendFile(path.join(STATIC_DIR, 'index.html'));
 });
 
 // Initialize settings

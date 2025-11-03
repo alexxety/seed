@@ -1,17 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Admin, Tenant } from '@/types/admin';
 
 interface AdminAuthStore {
   token: string | null;
   expiresAt: number | null;
   lastActivity: number;
+  admin: Admin | null;
+  tenant: Tenant | null;
 
-  setAuth: (token: string, expiresIn: number) => void;
+  setAuth: (token: string, expiresIn: number, admin: Admin, tenant: Tenant) => void;
   clearAuth: () => void;
   updateActivity: () => void;
   isAuthenticated: () => boolean;
   isTokenExpired: () => boolean;
   getToken: () => string | null;
+  getAdmin: () => Admin | null;
+  getTenant: () => Tenant | null;
 }
 
 const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 час в миллисекундах
@@ -22,14 +27,16 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
       token: null,
       expiresAt: null,
       lastActivity: Date.now(),
+      admin: null,
+      tenant: null,
 
-      setAuth: (token: string, expiresIn: number) => {
+      setAuth: (token: string, expiresIn: number, admin: Admin, tenant: Tenant) => {
         const expiresAt = Date.now() + expiresIn * 1000;
-        set({ token, expiresAt, lastActivity: Date.now() });
+        set({ token, expiresAt, lastActivity: Date.now(), admin, tenant });
       },
 
       clearAuth: () => {
-        set({ token: null, expiresAt: null, lastActivity: Date.now() });
+        set({ token: null, expiresAt: null, lastActivity: Date.now(), admin: null, tenant: null });
       },
 
       updateActivity: () => {
@@ -70,6 +77,16 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
         }
         return null;
       },
+
+      getAdmin: () => {
+        const state = get();
+        return state.isAuthenticated() ? state.admin : null;
+      },
+
+      getTenant: () => {
+        const state = get();
+        return state.isAuthenticated() ? state.tenant : null;
+      },
     }),
     {
       name: 'admin-auth-storage',
@@ -77,6 +94,8 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
         token: state.token,
         expiresAt: state.expiresAt,
         lastActivity: state.lastActivity,
+        admin: state.admin,
+        tenant: state.tenant,
       }),
     }
   )

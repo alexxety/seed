@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useAdminOrders, useUpdateOrderStatus, useDeleteOrder } from '@/features/admin/orders/api';
+import { useAdminOrders, useUpdateOrderStatus } from '@/features/admin/orders/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, isValid, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import type { OrderStatus } from '@/types';
+import type { OrderStatus } from '@/types/admin';
 
 function formatOrderDate(dateString: string): string {
   try {
@@ -24,32 +24,27 @@ export const Route = createFileRoute('/admin/_admin/orders')({
 });
 
 const statusLabels: Record<OrderStatus, string> = {
-  new: 'Новый',
-  in_progress: 'В обработке',
-  completed: 'Выполнен',
+  pending: 'Новый',
+  processing: 'В обработке',
+  shipped: 'Отправлен',
+  delivered: 'Доставлен',
   cancelled: 'Отменен',
 };
 
 const statusColors: Record<OrderStatus, string> = {
-  new: 'bg-blue-100 text-blue-800',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-green-100 text-green-800',
+  pending: 'bg-blue-100 text-blue-800',
+  processing: 'bg-yellow-100 text-yellow-800',
+  shipped: 'bg-purple-100 text-purple-800',
+  delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 };
 
 function AdminOrdersPage() {
   const { data: orders, isLoading } = useAdminOrders();
   const updateStatus = useUpdateOrderStatus();
-  const deleteOrder = useDeleteOrder();
 
-  const handleStatusChange = (orderId: number, newStatus: OrderStatus) => {
-    updateStatus.mutate({ id: orderId, status: newStatus });
-  };
-
-  const handleDeleteOrder = (orderId: number, orderNumber: string) => {
-    if (window.confirm(`Вы уверены, что хотите удалить заказ ${orderNumber}?`)) {
-      deleteOrder.mutate(orderId);
-    }
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus, paid?: boolean) => {
+    updateStatus.mutate({ id: orderId, status: newStatus, paid });
   };
 
   if (isLoading) {
@@ -85,38 +80,40 @@ function AdminOrdersPage() {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm font-medium text-gray-700">Клиент</p>
-              <p>{order.customer_name}</p>
-              <p className="text-sm text-gray-600">{order.customer_phone}</p>
+              <p>{order.customer?.full_name || 'Имя не указано'}</p>
+              <p className="text-sm text-gray-600">{order.customer?.phone || order.customer?.email || 'Контакт не указан'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700">Доставка</p>
-              <p>{order.delivery_type === 'address' ? 'Адрес' : 'ПВЗ'}</p>
-              <p className="text-sm text-gray-600">{order.delivery_details}</p>
+              <p>{order.delivery_type || 'Не указана'}</p>
             </div>
           </div>
 
           <div className="border-t pt-4">
-            <p className="text-lg font-semibold">Сумма: {order.total_amount} ₽</p>
+            <p className="text-lg font-semibold">
+              Сумма: {order.total} {order.currency || '₽'}
+              {order.paid && <span className="ml-2 text-sm text-green-600">(Оплачен)</span>}
+            </p>
           </div>
 
           <div className="flex gap-2 mt-4 flex-wrap">
-            {order.status === 'new' && (
+            {order.status === 'pending' && (
               <Button
                 size="sm"
-                onClick={() => handleStatusChange(order.id, 'in_progress')}
+                onClick={() => handleStatusChange(order.id, 'processing')}
                 disabled={updateStatus.isPending}
               >
                 В обработку
               </Button>
             )}
-            {order.status === 'in_progress' && (
+            {order.status === 'processing' && (
               <>
                 <Button
                   size="sm"
-                  onClick={() => handleStatusChange(order.id, 'completed')}
+                  onClick={() => handleStatusChange(order.id, 'shipped')}
                   disabled={updateStatus.isPending}
                 >
-                  Выполнен
+                  Отправлен
                 </Button>
                 <Button
                   size="sm"
@@ -128,15 +125,26 @@ function AdminOrdersPage() {
                 </Button>
               </>
             )}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => handleDeleteOrder(order.id, order.order_number)}
-              disabled={deleteOrder.isPending}
-              className="ml-auto"
-            >
-              Удалить
-            </Button>
+            {order.status === 'shipped' && (
+              <Button
+                size="sm"
+                onClick={() => handleStatusChange(order.id, 'delivered')}
+                disabled={updateStatus.isPending}
+              >
+                Доставлен
+              </Button>
+            )}
+            {!order.paid && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleStatusChange(order.id, order.status, true)}
+                disabled={updateStatus.isPending}
+                className="ml-auto"
+              >
+                Отметить оплаченным
+              </Button>
+            )}
           </div>
         </Card>
       ))}

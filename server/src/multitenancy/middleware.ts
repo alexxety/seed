@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Global PrismaClient for infrastructure endpoints (no tenant context)
+ * Used only for: tenant lookups, superadmin, shared tables in public schema
+ */
 let globalPrisma: PrismaClient | null = null;
 
 export function getGlobalPrisma(): PrismaClient {
@@ -10,40 +14,44 @@ export function getGlobalPrisma(): PrismaClient {
   return globalPrisma;
 }
 
-export async function getTenantDB(req: Request) {
-  const context = (req as any).context;
-
-  if (!context || !context.tenant) {
-    return getGlobalPrisma();
-  }
-
-  const schema = context.tenant.schema;
-  const basePrisma = getGlobalPrisma();
-
-  const tenantPrisma = basePrisma.$extends({
-    query: {
-      async $allOperations({ args, query }: any) {
-        const [, result] = await basePrisma.$transaction([
-          basePrisma.$executeRawUnsafe(`SET LOCAL search_path TO "${schema}", public`),
-          query(args),
-        ]);
-        return result;
-      },
-    },
-  });
-
-  return tenantPrisma;
-}
-
+/**
+ * Standard-2025: Attach tenant-scoped PrismaClient to req.db
+ *
+ * Creates one PrismaClient per request with search_path set to tenant schema.
+ * Client is automatically closed on response finish.
+ *
+ * NO global clients for tenant requests.
+ * NO search_path in functions - only here in middleware.
+ */
 export async function attachTenantDB(req: Request, res: Response, next: NextFunction) {
   try {
-    (req as any).db = await getTenantDB(req);
+    const context = (req as any).context;
 
-    if ((req as any).context && (req as any).context.tenant) {
-      console.log(`🗄️  DB context: ${(req as any).context.tenant.schema}`);
-    } else {
-      console.log('🗄️  DB context: public (без tenant)');
+    // Infrastructure request: use shared global client
+    if (!context || !context.tenant) {
+      (req as any).db = getGlobalPrisma();
+      console.log('🗄️  DB context: public (infrastructure)');
+      return next();
     }
+
+    // Tenant request: create dedicated PrismaClient with search_path
+    const schema = context.tenant.schema;
+    const tenantClient = new PrismaClient();
+
+    // Set search_path immediately after connection
+    await tenantClient.$executeRawUnsafe(`SET search_path TO "${schema}", public`);
+
+    (req as any).db = tenantClient;
+    console.log(`🗄️  DB context: ${schema}`);
+
+    // Close client when response finishes
+    res.on('finish', async () => {
+      try {
+        await tenantClient.$disconnect();
+      } catch (error) {
+        console.error('Error disconnecting tenant DB:', error);
+      }
+    });
 
     next();
   } catch (error: any) {
@@ -53,12 +61,4 @@ export async function attachTenantDB(req: Request, res: Response, next: NextFunc
       message: error.message,
     });
   }
-}
-
-export async function withTenantSchema(schema: string, callback: any) {
-  const prisma = getGlobalPrisma();
-  return await prisma.$transaction(async tx => {
-    await tx.$executeRawUnsafe(`SET LOCAL search_path TO "${schema}", public`);
-    return await callback(tx);
-  });
 }

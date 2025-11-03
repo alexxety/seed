@@ -24,7 +24,7 @@ export function useAdminOrders() {
   return useQuery({
     queryKey: ['admin', 'orders'],
     queryFn: async () => {
-      const data = await apiClient<OrdersResponse>('/api/orders', {
+      const data = await apiClient<OrdersResponse>('/admin/orders', {
         headers: getAuthHeaders(),
       });
       return data.orders;
@@ -33,11 +33,11 @@ export function useAdminOrders() {
   });
 }
 
-export function useAdminOrder(id: number) {
+export function useAdminOrder(id: string) {
   return useQuery({
     queryKey: ['admin', 'orders', id],
     queryFn: async () => {
-      const data = await apiClient<OrderDetailsResponse>(`/api/orders/${id}`, {
+      const data = await apiClient<OrderDetailsResponse>(`/admin/orders/${id}`, {
         headers: getAuthHeaders(),
       });
       return data.order;
@@ -53,15 +53,20 @@ export function useUpdateOrderStatus() {
     mutationFn: async ({
       id,
       status,
+      paid,
     }: {
-      id: number;
+      id: string;
       status: UpdateOrderStatusRequest['status'];
+      paid?: boolean;
     }) => {
-      const data = await apiClient<{ success: boolean; order: Order }>(`/api/orders/${id}`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ status }),
-      });
+      const data = await apiClient<{ success: boolean; order: Order }>(
+        `/admin/orders/${id}/status`,
+        {
+          method: 'PATCH',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status, paid }),
+        }
+      );
       return data.order;
     },
     onSuccess: updatedOrder => {
@@ -71,28 +76,6 @@ export function useUpdateOrderStatus() {
       );
       // Обновляем кэш конкретного заказа
       queryClient.setQueryData(['admin', 'orders', updatedOrder.id], updatedOrder);
-    },
-  });
-}
-
-export function useDeleteOrder() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await apiClient<{ success: boolean; message: string }>(`/api/orders/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-      return id;
-    },
-    onSuccess: deletedId => {
-      // Удаляем заказ из кэша списка заказов
-      queryClient.setQueryData<Order[]>(['admin', 'orders'], old =>
-        old?.filter(order => order.id !== deletedId)
-      );
-      // Удаляем кэш конкретного заказа
-      queryClient.removeQueries({ queryKey: ['admin', 'orders', deletedId] });
     },
   });
 }

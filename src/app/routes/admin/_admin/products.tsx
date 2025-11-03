@@ -1,67 +1,29 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useProducts, useCategories } from '@/features/products/api';
 import {
+  useAdminProducts,
   useDeleteProduct,
   useCreateProduct,
   useUpdateProduct,
 } from '@/features/admin/products/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import type { Product } from '@/types';
+import type { Product } from '@/types/admin';
 
 export const Route = createFileRoute('/admin/_admin/products')({
   component: AdminProductsPage,
 });
 
-// Компонент для изображения с заглушкой
-function ProductImage({ src, alt }: { src: string; alt: string }) {
-  const [error, setError] = useState(false);
-
-  if (error || !src) {
-    return (
-      <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-3 flex items-center justify-center">
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          <svg
-            className="mx-auto h-12 w-12 mb-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <p className="text-sm">Нет изображения</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className="w-full h-48 object-cover rounded-lg mb-3"
-      onError={() => setError(true)}
-    />
-  );
-}
-
 interface ProductFormState {
   name: string;
-  price: string;
+  vendor: string;
   category: string;
-  image: string;
   description: string;
+  is_active: boolean;
 }
 
 function AdminProductsPage() {
-  const { data: products, isLoading } = useProducts();
-  const { data: categories } = useCategories();
+  const { data: products, isLoading } = useAdminProducts();
   const deleteProduct = useDeleteProduct();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -70,17 +32,13 @@ function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormState>({
     name: '',
-    price: '',
-    category: '',
-    image: '',
+    vendor: 'Default Vendor',
+    category: 'General',
     description: '',
+    is_active: true,
   });
 
-  const getCategoryName = (categoryId: number) => {
-    return categories?.find(c => c.id === categoryId)?.name || 'Без категории';
-  };
-
-  const handleDelete = (id: number, name: string) => {
+  const handleDelete = (id: string, name: string) => {
     if (confirm(`Удалить товар "${name}"?`)) {
       deleteProduct.mutate(id);
     }
@@ -90,10 +48,10 @@ function AdminProductsPage() {
     setEditingProduct(null);
     setFormData({
       name: '',
-      price: '',
-      category: categories?.[0]?.id.toString() || '',
-      image: '',
+      vendor: 'Default Vendor',
+      category: 'General',
       description: '',
+      is_active: true,
     });
     setShowModal(true);
   };
@@ -102,10 +60,10 @@ function AdminProductsPage() {
     setEditingProduct(product);
     setFormData({
       name: product.name,
-      price: product.price.toString(),
-      category: product.category.toString(),
-      image: product.image,
-      description: product.description,
+      vendor: product.vendor || 'Default Vendor',
+      category: product.category || 'General',
+      description: product.description || '',
+      is_active: product.is_active,
     });
     setShowModal(true);
   };
@@ -115,10 +73,10 @@ function AdminProductsPage() {
     setEditingProduct(null);
     setFormData({
       name: '',
-      price: '',
-      category: '',
-      image: '',
+      vendor: 'Default Vendor',
+      category: 'General',
       description: '',
+      is_active: true,
     });
   };
 
@@ -127,10 +85,10 @@ function AdminProductsPage() {
 
     const data = {
       name: formData.name,
-      price: parseInt(formData.price),
-      category: parseInt(formData.category),
-      image: formData.image,
+      vendor: formData.vendor,
+      category: formData.category,
       description: formData.description,
+      is_active: formData.is_active,
     };
 
     if (editingProduct) {
@@ -167,31 +125,42 @@ function AdminProductsPage() {
           <p className="text-gray-500">Товаров пока нет</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {products.map(product => (
             <Card key={product.id} className="p-4">
-              <ProductImage src={product.image} alt={product.name} />
-              <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
-              <p className="text-sm text-gray-600 mb-2">{getCategoryName(product.category)}</p>
-              <p className="text-lg font-bold mb-3">{product.price} ₽</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => handleOpenEdit(product)}
-                >
-                  Редактировать
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDelete(product.id, product.name)}
-                  disabled={deleteProduct.isPending}
-                  className="text-red-600 hover:bg-red-50"
-                >
-                  Удалить
-                </Button>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
+                  <p className="text-sm text-gray-600 mb-1">{product.description}</p>
+                  <p className="text-xs text-gray-500">
+                    Поставщик: {product.vendor || 'N/A'} | Категория: {product.category || 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Вариантов: {product.variants_count || 0} |
+                    Статус: {product.is_active ?
+                      <span className="text-green-600">Активен</span> :
+                      <span className="text-red-600">Неактивен</span>
+                    }
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenEdit(product)}
+                  >
+                    Редактировать
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDelete(product.id, product.name)}
+                    disabled={deleteProduct.isPending}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    Удалить
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -217,54 +186,44 @@ function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Цена (₽)</label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={e => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                  min="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Категория</label>
-                <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                >
-                  {categories?.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.icon} {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">URL изображения</label>
-                <input
-                  type="url"
-                  value={formData.image}
-                  onChange={e => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium mb-1">Описание</label>
                 <textarea
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                   rows={3}
-                  required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Поставщик</label>
+                <input
+                  type="text"
+                  value={formData.vendor}
+                  onChange={e => setFormData({ ...formData, vendor: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Категория</label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={e => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={formData.is_active}
+                  onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                  className="mr-2"
+                />
+                <label htmlFor="is_active" className="text-sm font-medium">Активен</label>
               </div>
 
               <div className="flex gap-2 pt-2">

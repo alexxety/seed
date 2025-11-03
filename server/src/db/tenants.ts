@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 export async function createTenant(db: PrismaClient, slug: string, name: string | null = null) {
   console.log(`🚀 Создание нового tenant: ${slug}`);
@@ -156,6 +157,20 @@ export async function createTenant(db: PrismaClient, slug: string, name: string 
       )
     `);
 
+    await db.$executeRawUnsafe(`
+      CREATE TABLE "${schemaName}".tenant_admins (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        email VARCHAR(255),
+        full_name VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'admin',
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
     console.log(`📊 Создание индексов...`);
 
     await db.$executeRawUnsafe(
@@ -214,6 +229,12 @@ export async function createTenant(db: PrismaClient, slug: string, name: string 
     await db.$executeRawUnsafe(
       `CREATE INDEX idx_outbox_aggregate ON "${schemaName}".outbox(aggregate_type, aggregate_id)`
     );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX idx_tenant_admins_username ON "${schemaName}".tenant_admins(username)`
+    );
+    await db.$executeRawUnsafe(
+      `CREATE INDEX idx_tenant_admins_active ON "${schemaName}".tenant_admins(is_active)`
+    );
 
     console.log(`🎨 Создание дефолтных store_settings...`);
 
@@ -237,7 +258,27 @@ export async function createTenant(db: PrismaClient, slug: string, name: string 
       'USD'
     );
 
+    console.log(`👤 Создание дефолтного админа...`);
+
+    // Create default admin: username "admin", password "admin123"
+    const defaultPassword = 'admin123';
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+    await db.$executeRawUnsafe(
+      `
+      INSERT INTO "${schemaName}".tenant_admins (username, password_hash, email, full_name, role, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `,
+      'admin',
+      passwordHash,
+      `admin@${slug}.x-bro.com`,
+      'Admin',
+      'admin',
+      true
+    );
+
     console.log(`✅ Схема ${schemaName} и таблицы успешно созданы`);
+    console.log(`🔑 Дефолтный admin создан: username="admin", password="admin123"`);
 
     return {
       id: tenant.id,
@@ -268,6 +309,13 @@ export async function getTenantById(db: PrismaClient, id: string) {
   return await db.tenant.findUnique({
     where: { id },
   });
+}
+
+export async function isSlugAvailable(db: PrismaClient, slug: string): Promise<boolean> {
+  const existing = await db.tenant.findUnique({
+    where: { slug },
+  });
+  return !existing;
 }
 
 export function getTenantSchema(tenantId: string): string {

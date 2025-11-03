@@ -1,0 +1,64 @@
+<div style="max-width: 900px; margin: 0 auto;">
+    <a href="/products" style="color: #6b7280; text-decoration: none; margin-bottom: 2rem; display: inline-block;">
+        &larr; Back to products
+    </a>
+
+    <div style="background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1f2937;"><%= product.name %></h1>
+
+        <% if (product.category) { %>
+            <div style="color: #6b7280; margin-bottom: 1.5rem; font-size: 1rem;">
+                Category: <span style="color: var(--brand-color); font-weight: 600;"><%= product.category %></span>
+            </div>
+        <% } %>
+
+        <div style="font-size: 2.5rem; font-weight: bold; color: var(--brand-color); margin-bottom: 2rem;">
+            <%= settings.currency === 'USD' ? '$' : settings.currency %>
+            <%= product.price ? product.price.toFixed(2) : '0.00' %>
+        </div>
+
+        <% if (product.description) { %>
+            <div style="margin-bottom: 2rem; line-height: 1.8; color: #4b5563; font-size: 1.1rem;">
+                <%= product.description %>
+            </div>
+        <% } %>
+
+        <% if (product.tags && product.tags.length > 0) { %>
+            <div style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1rem; color: #6b7280; margin-bottom: 0.5rem;">Tags:</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <% product.tags.forEach(tag => { %>
+                        <span style="background: var(--brand-color-light); color: var(--brand-color); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.875rem;">
+                            <%= tag %>
+                        </span>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button class="btn" onclick="alert('Add to cart functionality coming soon!')">
+                Add to Cart
+            </button>
+            <a href="/products" class="btn" style="background: #6b7280;">
+                Continue Shopping
+            </a>
+        </div>
+
+        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
+            <h3 style="font-size: 1.25rem; color: #374151; margin-bottom: 1rem;">Product Details</h3>
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 0.75rem; color: #6b7280;">
+                <div style="font-weight: 600;">Status:</div>
+                <div>
+                    <% if (product.is_active) { %>
+                        <span style="color: #16a34a;">In Stock</span>
+                    <% } else { %>
+                        <span style="color: #dc2626;">Out of Stock</span>
+                    <% } %>
+                </div>
+                <div style="font-weight: 600;">Product ID:</div>
+                <div style="font-family: monospace; font-size: 0.875rem;"><%= product.id %></div>
+            </div>
+        </div>
+    </div>
+</div>

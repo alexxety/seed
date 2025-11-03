@@ -1,0 +1,96 @@
+name: Deploy to Hetzner (Dev)
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client for build
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build project
+        run: npm run build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_KEY }}" | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          chmod 700 ~/.ssh
+          ssh-keyscan -H ${{ secrets.HETZNER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create dev directory if not exists
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "mkdir -p /var/www/telegram-shop-dev"
+
+      - name: Deploy to Hetzner (Dev)
+        run: |
+          # Sync built dist folder only
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" dist/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/dist/
+          # Sync package files for npm install
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" package.json package-lock.json ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/
+          # Sync Prisma files
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/prisma/
+          # Sync PM2 ecosystem config
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ecosystem.config.cjs ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop-dev/
+
+      - name: Set environment variables on server (Dev)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop-dev/.env << 'ENV_EOF'
+          NODE_ENV=development
+          PORT=3001
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DATABASE_URL=\"postgresql://seedshop:seedshop_secure_password_2025@localhost:5432/seedshop_dev\"
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          ENV_EOF
+          "
+
+      - name: Install dependencies and generate Prisma Client
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop-dev && npm install --omit=dev --ignore-scripts && npm rebuild bcrypt && npx prisma generate"
+
+      - name: Create PM2 log directory
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "mkdir -p /var/log/pm2"
+
+      - name: Restart dev server with zero downtime
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop-dev && pm2 reload telegram-shop-dev || pm2 start ecosystem.config.cjs --only telegram-shop-dev"
+
+      - name: Health check (dev.x-bro.com)
+        run: |
+          echo "⏳ Waiting 10s for server restart..."
+          sleep 10
+          echo "🔍 Checking dev.x-bro.com/health..."
+          curl -f https://dev.x-bro.com/health || exit 1
+          echo "✅ dev.x-bro.com is healthy"

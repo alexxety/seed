@@ -1,7 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
-import path from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -9,15 +12,19 @@ export default defineConfig({
     TanStackRouterVite({
       routesDirectory: './src/app/routes',
       generatedRouteTree: './src/routeTree.gen.ts',
-    })
+    }),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    outDir: 'web-dist',
+    emptyOutDir: true,
   },
   server: {
     host: true,
-    port: 5173
-  }
-})
+    port: 5173,
+  },
+});

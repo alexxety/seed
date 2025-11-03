@@ -1,218 +1,157 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { useSettings, useUpdateSettings, type Setting } from '@/features/admin/settings/api'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { createFileRoute } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { useStoreSettings, useUpdateStoreSettings } from '@/features/admin/settings/api';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/admin/_admin/settings')({
   component: AdminSettingsPage,
-})
+});
 
 interface SettingFormState {
-  [key: string]: string
+  title: string;
+  brand_color: string;
+  logo_path: string;
+  currency: string;
 }
 
 function AdminSettingsPage() {
-  const { data: settings, isLoading } = useSettings()
-  const updateSettings = useUpdateSettings()
+  const { data: settings, isLoading } = useStoreSettings();
+  const updateSettings = useUpdateStoreSettings();
 
-  const [formData, setFormData] = useState<SettingFormState>({})
-  const [showSecrets, setShowSecrets] = useState<{ [key: string]: boolean }>({})
-  const [hasChanges, setHasChanges] = useState(false)
-
-  // Group settings by category
-  const settingsByCategory = useMemo(() => {
-    if (!settings) return {}
-    return settings.reduce((acc, setting) => {
-      if (!acc[setting.category]) {
-        acc[setting.category] = []
-      }
-      acc[setting.category].push(setting)
-      return acc
-    }, {} as Record<string, Setting[]>)
-  }, [settings])
+  const [formData, setFormData] = useState<SettingFormState>({
+    title: '',
+    brand_color: '',
+    logo_path: '',
+    currency: '',
+  });
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Initialize form data when settings load
-  useMemo(() => {
-    if (settings && Object.keys(formData).length === 0) {
-      const initialData: SettingFormState = {}
-      settings.forEach(setting => {
-        initialData[setting.key] = setting.value || ''
-      })
-      setFormData(initialData)
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        title: settings.title || '',
+        brand_color: settings.brand_color || '',
+        logo_path: settings.logo_path || '',
+        currency: settings.currency || '',
+      });
     }
-  }, [settings, formData])
+  }, [settings]);
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (field: keyof SettingFormState, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [key]: value
-    }))
-    setHasChanges(true)
-  }
-
-  const toggleShowSecret = (key: string) => {
-    setShowSecrets(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }))
-  }
+      [field]: value,
+    }));
+    setHasChanges(true);
+  };
 
   const handleSave = async () => {
-    if (!settings) return
-
-    const updates = Object.entries(formData)
-      .filter(([key, value]) => {
-        const original = settings.find(s => s.key === key)
-        return original && original.value !== value
-      })
-      .map(([key, value]) => ({ key, value }))
-
-    if (updates.length === 0) {
-      alert('ℹ️ Нет изменений для сохранения')
-      return
-    }
-
-    updateSettings.mutate(updates, {
+    updateSettings.mutate(formData, {
       onSuccess: () => {
-        setHasChanges(false)
-        alert('✅ Настройки успешно сохранены!')
-      }
-    })
-  }
+        setHasChanges(false);
+        alert('✅ Настройки успешно сохранены');
+      },
+    });
+  };
 
   const handleReset = () => {
-    if (!settings) return
-    const initialData: SettingFormState = {}
-    settings.forEach(setting => {
-      initialData[setting.key] = setting.value || ''
-    })
-    setFormData(initialData)
-    setHasChanges(false)
-  }
-
-  const categoryNames: Record<string, string> = {
-    telegram: '📱 Telegram',
-    bot: '🤖 Бот',
-    system: '⚙️ Система',
-    general: '📋 Общее'
-  }
-
-  const categoryDescriptions: Record<string, string> = {
-    telegram: 'Настройки интеграции с Telegram',
-    bot: 'Настройки бота и магазина',
-    system: 'Системные настройки',
-    general: 'Общие настройки приложения'
-  }
+    if (settings) {
+      setFormData({
+        title: settings.title || '',
+        brand_color: settings.brand_color || '',
+        logo_path: settings.logo_path || '',
+        currency: settings.currency || '',
+      });
+      setHasChanges(false);
+    }
+  };
 
   if (isLoading) {
-    return <div className="p-6">Загрузка...</div>
+    return <div className="text-center py-12">Загрузка настроек...</div>;
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Настройки</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Управление настройками бота и интеграций
-          </p>
-        </div>
-        {hasChanges && (
-          <div className="flex gap-2">
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              className="bg-gray-100 dark:bg-gray-700"
-            >
-              Отменить
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-[var(--tg-theme-button-color)] text-white"
-            >
-              Сохранить изменения
-            </Button>
+    <div className="space-y-6 max-w-2xl">
+      <h1 className="text-2xl font-bold">Настройки магазина</h1>
+
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Название магазина</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={e => handleInputChange('title', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="Мой магазин"
+            />
           </div>
-        )}
-      </div>
 
-      <div className="space-y-6">
-        {Object.entries(settingsByCategory).map(([category, categorySettings]) => (
-          <Card key={category} className="p-6 bg-white dark:bg-gray-800">
-            <h2 className="text-xl font-semibold mb-2">
-              {categoryNames[category] || category}
-            </h2>
-            {categoryDescriptions[category] && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {categoryDescriptions[category]}
-              </p>
-            )}
-
-            <div className="space-y-4">
-              {categorySettings.map(setting => (
-                <div key={setting.key} className="space-y-2">
-                  <label className="block">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">
-                        {setting.label}
-                        {setting.isRequired && (
-                          <span className="text-red-500 ml-1">*</span>
-                        )}
-                      </span>
-                      {setting.type === 'secret' && (
-                        <button
-                          type="button"
-                          onClick={() => toggleShowSecret(setting.key)}
-                          className="text-xs text-blue-500 hover:text-blue-700"
-                        >
-                          {showSecrets[setting.key] ? '👁️ Скрыть' : '👁️ Показать'}
-                        </button>
-                      )}
-                    </div>
-                    {setting.description && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        {setting.description}
-                      </p>
-                    )}
-                    {setting.type === 'textarea' ? (
-                      <textarea
-                        value={formData[setting.key] || ''}
-                        onChange={(e) => handleInputChange(setting.key, e.target.value)}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required={setting.isRequired}
-                      />
-                    ) : (
-                      <input
-                        type={setting.type === 'secret' && !showSecrets[setting.key] ? 'password' :
-                              setting.type === 'number' ? 'number' : 'text'}
-                        value={formData[setting.key] || ''}
-                        onChange={(e) => handleInputChange(setting.key, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required={setting.isRequired}
-                        placeholder={setting.type === 'secret' ? '••••••••' : ''}
-                      />
-                    )}
-                  </label>
-                </div>
-              ))}
+          <div>
+            <label className="block text-sm font-medium mb-1">Цвет бренда (HEX)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.brand_color}
+                onChange={e => handleInputChange('brand_color', e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-lg"
+                placeholder="#3B82F6"
+              />
+              <input
+                type="color"
+                value={formData.brand_color || '#3B82F6'}
+                onChange={e => handleInputChange('brand_color', e.target.value)}
+                className="w-12 h-10 border rounded-lg"
+              />
             </div>
-          </Card>
-        ))}
-      </div>
+          </div>
 
-      {hasChanges && (
-        <div className="fixed bottom-6 right-6 bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg shadow-lg">
-          <p className="text-sm font-medium">
-            ⚠️ У вас есть несохраненные изменения
-          </p>
+          <div>
+            <label className="block text-sm font-medium mb-1">URL логотипа</label>
+            <input
+              type="url"
+              value={formData.logo_path}
+              onChange={e => handleInputChange('logo_path', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Валюта</label>
+            <input
+              type="text"
+              value={formData.currency}
+              onChange={e => handleInputChange('currency', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="RUB"
+              maxLength={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Код валюты ISO 4217 (например: RUB, USD, EUR)
+            </p>
+          </div>
         </div>
-      )}
+
+        <div className="flex gap-2 mt-6 pt-4 border-t">
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || updateSettings.isPending}
+            className="flex-1"
+          >
+            {updateSettings.isPending ? 'Сохранение...' : 'Сохранить изменения'}
+          </Button>
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            disabled={!hasChanges || updateSettings.isPending}
+          >
+            Отменить
+          </Button>
+        </div>
+      </Card>
     </div>
-  )
+  );
 }

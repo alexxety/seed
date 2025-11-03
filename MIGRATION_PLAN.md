@@ -5,6 +5,7 @@
 **Цель:** Мигрировать клиентскую часть Telegram Mini App с JavaScript на современный стек 2025 года.
 
 **Текущий стек:**
+
 - React 18.2 (JavaScript)
 - Vite 5.0
 - Обычный CSS
@@ -13,6 +14,7 @@
 - useState для cart
 
 **Целевой стек:**
+
 - React 18.2 (TypeScript)
 - Vite 5.0
 - Tailwind CSS
@@ -104,12 +106,14 @@ src/
 ### Шаг 1: Подготовка
 
 **Команды:**
+
 ```bash
 cd /home/user/seed
 git checkout -b feature/migrate-to-typescript-stack
 ```
 
 **Проверить:**
+
 - ✅ Новая ветка создана
 - ✅ Текущая ветка: `feature/migrate-to-typescript-stack`
 
@@ -118,6 +122,7 @@ git checkout -b feature/migrate-to-typescript-stack
 ### Шаг 2: Установка зависимостей
 
 **Команды:**
+
 ```bash
 # TypeScript
 npm install -D typescript @types/react @types/react-dom @types/node
@@ -142,6 +147,7 @@ npm install clsx tailwind-merge
 ```
 
 **Проверить:**
+
 - ✅ Все пакеты установлены
 - ✅ package.json обновлен
 - ✅ tailwind.config.js создан
@@ -203,6 +209,7 @@ npm install clsx tailwind-merge
 ```
 
 **Проверить:**
+
 - ✅ tsconfig.json создан
 - ✅ tsconfig.node.json создан
 
@@ -215,10 +222,7 @@ npm install clsx tailwind-merge
 ```js
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -227,11 +231,11 @@ export default {
         'tg-hint': 'var(--tg-theme-hint-color, #999999)',
         'tg-button': 'var(--tg-theme-button-color, #3390ec)',
         'tg-button-text': 'var(--tg-theme-button-text-color, #ffffff)',
-      }
+      },
     },
   },
   plugins: [],
-}
+};
 ```
 
 **Создать файл:** `src/styles.css`
@@ -252,6 +256,7 @@ export default {
 ```
 
 **Проверить:**
+
 - ✅ tailwind.config.js обновлен
 - ✅ src/styles.css создан
 
@@ -262,29 +267,27 @@ export default {
 **Обновить файл:** `vite.config.js` → `vite.config.ts`
 
 ```typescript
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
-import path from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
+import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    TanStackRouterVite()
-  ],
+  plugins: [react(), TanStackRouterVite()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   },
   server: {
     host: true,
-    port: 5173
-  }
-})
+    port: 5173,
+  },
+});
 ```
 
 **Проверить:**
+
 - ✅ vite.config.ts создан
 - ✅ vite.config.js удален
 
@@ -293,6 +296,7 @@ export default defineConfig({
 ### Шаг 6: Создать структуру директорий
 
 **Команды:**
+
 ```bash
 cd /home/user/seed/src
 
@@ -307,6 +311,7 @@ mkdir -p types
 ```
 
 **Проверить:**
+
 - ✅ Все директории созданы
 
 ---
@@ -317,12 +322,12 @@ mkdir -p types
 
 ```typescript
 export interface Product {
-  id: number
-  name: string
-  price: number
-  category: number
-  image: string
-  description: string
+  id: number;
+  name: string;
+  price: number;
+  category: number;
+  image: string;
+  description: string;
 }
 ```
 
@@ -330,54 +335,55 @@ export interface Product {
 
 ```typescript
 export interface Category {
-  id: number
-  name: string
-  icon: string
+  id: number;
+  name: string;
+  icon: string;
 }
 ```
 
 **Создать файл:** `src/types/order.ts`
 
 ```typescript
-import type { Product } from './product'
+import type { Product } from './product';
 
 export interface CartItem extends Product {
-  quantity: number
+  quantity: number;
 }
 
 export interface Customer {
-  fullName: string
-  phone: string
-  deliveryType: 'address' | 'cdek'
-  deliveryDetails: string
-  telegramUsername?: string
-  telegramId?: number
-  telegramFirstName?: string
-  telegramLastName?: string
+  fullName: string;
+  phone: string;
+  deliveryType: 'address' | 'cdek';
+  deliveryDetails: string;
+  telegramUsername?: string;
+  telegramId?: number;
+  telegramFirstName?: string;
+  telegramLastName?: string;
 }
 
 export interface Order {
-  customer: Customer
-  items: CartItem[]
-  total: number
+  customer: Customer;
+  items: CartItem[];
+  total: number;
 }
 
 export interface OrderResponse {
-  success: boolean
-  orderNumber: string
-  orderId: number
+  success: boolean;
+  orderNumber: string;
+  orderId: number;
 }
 ```
 
 **Создать файл:** `src/types/index.ts`
 
 ```typescript
-export * from './product'
-export * from './category'
-export * from './order'
+export * from './product';
+export * from './category';
+export * from './order';
 ```
 
 **Проверить:**
+
 - ✅ Все файлы типов созданы
 
 ---
@@ -387,11 +393,11 @@ export * from './order'
 **Создать файл:** `src/lib/utils.ts`
 
 ```typescript
-import { type ClassValue, clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
@@ -399,108 +405,109 @@ export function cn(...inputs: ClassValue[]) {
 
 ```typescript
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message)
-    this.name = 'ApiError'
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
   }
 }
 
-export async function apiClient<T>(
-  url: string,
-  options?: RequestInit
-): Promise<T> {
+export async function apiClient<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new ApiError(response.status, `HTTP error! status: ${response.status}`)
+    throw new ApiError(response.status, `HTTP error! status: ${response.status}`);
   }
 
-  return response.json()
+  return response.json();
 }
 ```
 
 **Создать файл:** `src/lib/telegram.ts`
 
 ```typescript
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 
 declare global {
   interface Window {
     Telegram?: {
       WebApp: {
-        ready: () => void
-        expand: () => void
-        close: () => void
+        ready: () => void;
+        expand: () => void;
+        close: () => void;
         themeParams: {
-          bg_color?: string
-          text_color?: string
-          hint_color?: string
-          button_color?: string
-          button_text_color?: string
-        }
+          bg_color?: string;
+          text_color?: string;
+          hint_color?: string;
+          button_color?: string;
+          button_text_color?: string;
+        };
         initDataUnsafe?: {
           user?: {
-            id: number
-            first_name?: string
-            last_name?: string
-            username?: string
-          }
-        }
-      }
-    }
+            id: number;
+            first_name?: string;
+            last_name?: string;
+            username?: string;
+          };
+        };
+      };
+    };
   }
 }
 
 export function useTelegram() {
-  const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
+  const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
 
   useEffect(() => {
     if (tg) {
-      tg.ready()
-      tg.expand()
+      tg.ready();
+      tg.expand();
     }
-  }, [tg])
+  }, [tg]);
 
   return {
     tg,
     user: tg?.initDataUnsafe?.user,
     themeParams: tg?.themeParams,
-  }
+  };
 }
 
 export function useTelegramTheme() {
-  const { themeParams } = useTelegram()
+  const { themeParams } = useTelegram();
 
   useEffect(() => {
     if (themeParams) {
-      const root = document.documentElement
+      const root = document.documentElement;
       if (themeParams.bg_color) {
-        root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color)
+        root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color);
       }
       if (themeParams.text_color) {
-        root.style.setProperty('--tg-theme-text-color', themeParams.text_color)
+        root.style.setProperty('--tg-theme-text-color', themeParams.text_color);
       }
       if (themeParams.hint_color) {
-        root.style.setProperty('--tg-theme-hint-color', themeParams.hint_color)
+        root.style.setProperty('--tg-theme-hint-color', themeParams.hint_color);
       }
       if (themeParams.button_color) {
-        root.style.setProperty('--tg-theme-button-color', themeParams.button_color)
+        root.style.setProperty('--tg-theme-button-color', themeParams.button_color);
       }
       if (themeParams.button_text_color) {
-        root.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color)
+        root.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color);
       }
     }
-  }, [themeParams])
+  }, [themeParams]);
 }
 ```
 
 **Проверить:**
+
 - ✅ Все утилиты созданы
 
 ---
@@ -510,32 +517,32 @@ export function useTelegramTheme() {
 **Создать файл:** `src/features/products/api.ts`
 
 ```typescript
-import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import type { Product, Category } from '@/types'
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { Product, Category } from '@/types';
 
 interface ProductsResponse {
-  success: boolean
+  success: boolean;
   products: Array<{
-    id: number
-    name: string
-    price: number
-    category_id: number
-    image: string
-    description: string
-  }>
+    id: number;
+    name: string;
+    price: number;
+    category_id: number;
+    image: string;
+    description: string;
+  }>;
 }
 
 interface CategoriesResponse {
-  success: boolean
-  categories: Category[]
+  success: boolean;
+  categories: Category[];
 }
 
 export function useProducts() {
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const data = await apiClient<ProductsResponse>('/api/products')
+      const data = await apiClient<ProductsResponse>('/api/products');
       // Трансформируем данные из API в формат приложения
       return data.products.map(p => ({
         id: p.id,
@@ -544,33 +551,33 @@ export function useProducts() {
         category: p.category_id,
         image: p.image,
         description: p.description,
-      })) as Product[]
+      })) as Product[];
     },
-  })
+  });
 }
 
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const data = await apiClient<CategoriesResponse>('/api/categories')
-      return data.categories
+      const data = await apiClient<CategoriesResponse>('/api/categories');
+      return data.categories;
     },
-  })
+  });
 }
 
 export function useProduct(id: number) {
-  const { data: products } = useProducts()
-  return products?.find(p => p.id === id)
+  const { data: products } = useProducts();
+  return products?.find(p => p.id === id);
 }
 ```
 
 **Создать файл:** `src/features/orders/api.ts`
 
 ```typescript
-import { useMutation } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import type { Order, OrderResponse } from '@/types'
+import { useMutation } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { Order, OrderResponse } from '@/types';
 
 export function useCreateOrder() {
   return useMutation({
@@ -578,13 +585,14 @@ export function useCreateOrder() {
       return apiClient<OrderResponse>('/api/send-order', {
         method: 'POST',
         body: JSON.stringify(order),
-      })
+      });
     },
-  })
+  });
 }
 ```
 
 **Проверить:**
+
 - ✅ API слои созданы
 
 ---
@@ -594,72 +602,66 @@ export function useCreateOrder() {
 **Создать файл:** `src/features/cart/store.ts`
 
 ```typescript
-import { create } from 'zustand'
-import type { Product, CartItem } from '@/types'
+import { create } from 'zustand';
+import type { Product, CartItem } from '@/types';
 
 interface CartStore {
-  items: CartItem[]
-  addItem: (product: Product, quantity?: number) => void
-  updateQuantity: (id: number, quantity: number) => void
-  removeItem: (id: number) => void
-  clearCart: () => void
-  total: number
-  itemsCount: number
+  items: CartItem[];
+  addItem: (product: Product, quantity?: number) => void;
+  updateQuantity: (id: number, quantity: number) => void;
+  removeItem: (id: number) => void;
+  clearCart: () => void;
+  total: number;
+  itemsCount: number;
 }
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
 
   addItem: (product, quantity = 1) => {
-    set((state) => {
-      const existing = state.items.find((i) => i.id === product.id)
+    set(state => {
+      const existing = state.items.find(i => i.id === product.id);
       if (existing) {
         return {
-          items: state.items.map((i) =>
-            i.id === product.id
-              ? { ...i, quantity: i.quantity + quantity }
-              : i
+          items: state.items.map(i =>
+            i.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
           ),
-        }
+        };
       }
-      return { items: [...state.items, { ...product, quantity }] }
-    })
+      return { items: [...state.items, { ...product, quantity }] };
+    });
   },
 
   updateQuantity: (id, quantity) => {
     if (quantity <= 0) {
-      get().removeItem(id)
-      return
+      get().removeItem(id);
+      return;
     }
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.id === id ? { ...i, quantity } : i
-      ),
-    }))
+    set(state => ({
+      items: state.items.map(i => (i.id === id ? { ...i, quantity } : i)),
+    }));
   },
 
-  removeItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((i) => i.id !== id),
-    }))
+  removeItem: id => {
+    set(state => ({
+      items: state.items.filter(i => i.id !== id),
+    }));
   },
 
   clearCart: () => set({ items: [] }),
 
   get total() {
-    return get().items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    )
+    return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   },
 
   get itemsCount() {
-    return get().items.reduce((sum, item) => sum + item.quantity, 0)
+    return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
-}))
+}));
 ```
 
 **Проверить:**
+
 - ✅ Zustand store создан
 
 ---
@@ -758,6 +760,7 @@ Input.displayName = 'Input'
 ```
 
 **Проверить:**
+
 - ✅ UI компоненты созданы
 
 ---
@@ -801,6 +804,7 @@ export const Route = createRootRoute({
 ```
 
 **Проверить:**
+
 - ✅ Root layout создан
 
 ---
@@ -952,6 +956,7 @@ export function Header({ title, showCart = false, onBack }: HeaderProps) {
 ```
 
 **Проверить:**
+
 - ✅ Компоненты мигрированы
 
 ---
@@ -1028,6 +1033,7 @@ function HomePage() {
 ```
 
 **Проверить:**
+
 - ✅ Главная страница создана
 
 ---
@@ -1110,6 +1116,7 @@ function ProductPage() {
 ```
 
 **Проверить:**
+
 - ✅ Страница товара создана
 
 ---
@@ -1213,6 +1220,7 @@ function CartPage() {
 ```
 
 **Проверить:**
+
 - ✅ Страница корзины создана
 
 ---
@@ -1398,6 +1406,7 @@ function CheckoutPage() {
 ```
 
 **Проверить:**
+
 - ✅ Страница оформления создана
 
 ---
@@ -1440,6 +1449,7 @@ function SuccessPage() {
 ```
 
 **Проверить:**
+
 - ✅ Страница успеха создана
 
 ---
@@ -1471,6 +1481,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ```
 
 **Проверить:**
+
 - ✅ main.tsx создан
 - ✅ main.jsx удален (после проверки)
 
@@ -1479,6 +1490,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ### Шаг 20: Очистка старых файлов
 
 **Удалить файлы:**
+
 ```bash
 rm src/App.jsx
 rm src/App.css
@@ -1488,10 +1500,12 @@ rm -rf src/data
 ```
 
 **НЕ удалять:**
+
 - `src/components/Cart.jsx` - может быть использован как референс
 - Старые файлы можно оставить в отдельной папке `src/__old__` для справки
 
 **Проверить:**
+
 - ✅ Старые файлы удалены или перемещены
 
 ---
@@ -1499,11 +1513,13 @@ rm -rf src/data
 ### Шаг 21: Тестирование
 
 **Запустить dev сервер:**
+
 ```bash
 npm run dev
 ```
 
 **Проверить в браузере:**
+
 1. ✅ Главная страница загружается
 2. ✅ Категории фильтруют товары
 3. ✅ Клик по товару → открывается страница товара
@@ -1516,11 +1532,13 @@ npm run dev
 10. ✅ Telegram theme применяется
 
 **Проверить TypeScript:**
+
 ```bash
 npx tsc --noEmit
 ```
 
 **Проверить сборку:**
+
 ```bash
 npm run build
 ```
@@ -1530,6 +1548,7 @@ npm run build
 ### Шаг 22: Коммит и пуш
 
 **Команды:**
+
 ```bash
 git add .
 git commit -m "Migrate to TypeScript + TanStack Router + TanStack Query + Tailwind
@@ -1554,6 +1573,7 @@ git push -u origin feature/migrate-to-typescript-stack
 ### Шаг 23: Проверка на production
 
 **После мержа в main:**
+
 1. GitHub Actions автоматически соберет и задеплоит
 2. Проверить https://seed.xrednode.com
 3. Проверить в Telegram Mini App
@@ -1563,11 +1583,13 @@ git push -u origin feature/migrate-to-typescript-stack
 ## ✅ Чеклист готовности
 
 ### Перед началом:
+
 - [ ] Создана ветка `feature/migrate-to-typescript-stack`
 - [ ] Все зависимости установлены
 - [ ] Конфигурации созданы (tsconfig, tailwind, vite)
 
 ### Во время:
+
 - [ ] Типы созданы
 - [ ] API слой с TanStack Query работает
 - [ ] Zustand store для корзины работает
@@ -1577,6 +1599,7 @@ git push -u origin feature/migrate-to-typescript-stack
 - [ ] Старые файлы удалены
 
 ### После:
+
 - [ ] `npm run dev` работает
 - [ ] `npx tsc --noEmit` без ошибок
 - [ ] `npm run build` успешен

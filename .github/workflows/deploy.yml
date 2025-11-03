@@ -19,12 +19,21 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci
 
       - name: Generate Prisma Client for build
         run: npx prisma generate
         env:
           DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Build project
         run: npm run build
@@ -39,22 +48,27 @@ jobs:
 
       - name: Deploy to Hetzner
         run: |
-          # Sync dist files (HTML, CSS, JS assets) - includes React SPA
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" dist/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/dist/
-          # Sync server files
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" server.js package.json database.js init-data.js ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
+          # Sync built dist folder only
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" dist/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/dist/
+          # Sync package files for npm install
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" package.json package-lock.json ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
           # Sync Prisma files
           rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" prisma/ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/prisma/
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" migrate-sqlite-to-postgres.js setup-postgres.sh POSTGRES_MIGRATION.md ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
+          # Sync PM2 ecosystem config
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ecosystem.config.cjs ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/var/www/telegram-shop/
 
       - name: Set environment variables on server
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/.env << 'ENV_EOF'
-          PORT=3000
+          NODE_ENV=production
+          PORT=3001
           TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           DATABASE_URL=\"postgresql://seedshop:seedshop_secure_password_2025@localhost:5432/seedshop\"
+          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID=${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CORS_ORIGIN=\"https://demo.x-bro.com,https://testshop.x-bro.com\"
           ENV_EOF
           "
 
@@ -62,23 +76,24 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && npm install --omit=dev --ignore-scripts && npm rebuild bcrypt && npx prisma generate"
 
-      - name: Create PM2 ecosystem config
+      - name: Create PM2 log directory
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cat > /var/www/telegram-shop/ecosystem.config.js << 'EOF'
-          module.exports = {
-            apps: [{
-              name: 'telegram-shop',
-              script: './server.js',
-              env_file: '.env',
-              instances: 1,
-              autorestart: true,
-              watch: false,
-              max_memory_restart: '1G'
-            }]
-          };
-          EOF
-          "
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "mkdir -p /var/log/pm2"
 
-      - name: Restart server
+      - name: Restart production server with zero downtime
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} "cd /var/www/telegram-shop && pm2 reload telegram-shop-prod || pm2 start ecosystem.config.cjs --only telegram-shop-prod"
+
+      - name: Health check (demo.x-bro.com)
+        run: |
+          echo "⏳ Waiting 10s for server restart..."
+          sleep 10
+          echo "🔍 Checking demo.x-bro.com/health..."
+          curl -f https://demo.x-bro.com/health || exit 1
+          echo "✅ demo.x-bro.com is healthy"
+
+      - name: Health check (testshop.x-bro.com)
+        run: |
+          echo "🔍 Checking testshop.x-bro.com/health..."
+          curl -f https://testshop.x-bro.com/health || exit 1
+          echo "✅ testshop.x-bro.com is healthy"

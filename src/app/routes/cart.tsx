@@ -1,16 +1,16 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useCartStore } from '@/features/cart/store'
-import { Header } from '@/components/Header'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useCartStore } from '@/features/cart/store';
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export const Route = createFileRoute('/cart')({
   component: CartPage,
-})
+});
 
 function CartPage() {
-  const navigate = useNavigate()
-  const { items, total, updateQuantity, removeItem } = useCartStore()
+  const navigate = useNavigate();
+  const { items, total, updateQuantity, removeItem } = useCartStore();
 
   if (items.length === 0) {
     return (
@@ -19,41 +19,38 @@ function CartPage() {
         <div className="flex items-center justify-center h-[80vh] flex-col gap-4">
           <div className="text-6xl">🛒</div>
           <div className="text-xl text-gray-500 dark:text-gray-400">Корзина пуста</div>
-          <Button onClick={() => navigate({ to: '/' })}>
-            Перейти к покупкам
-          </Button>
+          <Button onClick={() => navigate({ to: '/' })}>Перейти к покупкам</Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen pb-32">
       <Header title="Корзина" onBack={() => navigate({ to: '/' })} />
       <div className="p-4 space-y-4">
-        {items.map((item) => (
+        {items.map(item => (
           <Card key={item.id} className="p-4">
             <div className="flex gap-4">
               <img
                 src={item.image}
                 alt={item.name}
                 className="w-20 h-20 object-cover rounded"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  const parent = e.currentTarget.parentElement
+                onError={e => {
+                  e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
                   if (parent) {
-                    const placeholder = document.createElement('div')
-                    placeholder.className = 'w-20 h-20 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded text-3xl'
-                    placeholder.textContent = '🌱'
-                    parent.insertBefore(placeholder, parent.firstChild)
+                    const placeholder = document.createElement('div');
+                    placeholder.className =
+                      'w-20 h-20 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded text-3xl';
+                    placeholder.textContent = '🌱';
+                    parent.insertBefore(placeholder, parent.firstChild);
                   }
                 }}
               />
               <div className="flex-1">
                 <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">{item.name}</h3>
-                <p className="text-tg-button font-bold">
-                  {item.price.toLocaleString('ru-RU')} ₽
-                </p>
+                <p className="text-tg-button font-bold">{item.price.toLocaleString('ru-RU')} ₽</p>
                 <div className="flex items-center gap-3 mt-2">
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -61,7 +58,9 @@ function CartPage() {
                   >
                     -
                   </button>
-                  <span className="font-semibold text-gray-900 dark:text-white">{item.quantity}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {item.quantity}
+                  </span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
@@ -88,14 +87,10 @@ function CartPage() {
             {total.toLocaleString('ru-RU')} ₽
           </span>
         </div>
-        <Button
-          onClick={() => navigate({ to: '/checkout' })}
-          className="w-full"
-          size="lg"
-        >
+        <Button onClick={() => navigate({ to: '/checkout' })} className="w-full" size="lg">
           Оформить заказ
         </Button>
       </div>
     </div>
-  )
+  );
 }

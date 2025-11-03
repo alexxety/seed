@@ -1,32 +1,32 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, FormEvent } from 'react'
-import { useCartStore } from '@/features/cart/store'
-import { useCreateOrder } from '@/features/orders/api'
-import { useTelegram } from '@/lib/telegram'
-import { Header } from '@/components/Header'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState, FormEvent } from 'react';
+import { useCartStore } from '@/features/cart/store';
+import { useCreateOrder } from '@/features/orders/api';
+import { useTelegram } from '@/lib/telegram';
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 
 export const Route = createFileRoute('/checkout')({
   component: CheckoutPage,
-})
+});
 
 function CheckoutPage() {
-  const navigate = useNavigate()
-  const { items, total, clearCart } = useCartStore()
-  const { user } = useTelegram()
-  const createOrder = useCreateOrder()
+  const navigate = useNavigate();
+  const { items, total, clearCart } = useCartStore();
+  const { user } = useTelegram();
+  const createOrder = useCreateOrder();
 
   const [formData, setFormData] = useState({
     fullName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
     phone: '',
     deliveryType: 'address' as 'address' | 'pvz',
     deliveryDetails: '',
-  })
+  });
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
       const result = await createOrder.mutateAsync({
@@ -39,21 +39,21 @@ function CheckoutPage() {
         },
         items,
         total,
-      })
+      });
 
-      clearCart()
+      clearCart();
       navigate({
         to: '/success/$orderNumber',
         params: { orderNumber: result.orderNumber },
-      })
-    } catch (error) {
-      alert('Ошибка при оформлении заказа')
+      });
+    } catch {
+      alert('Ошибка при оформлении заказа');
     }
-  }
+  };
 
   if (items.length === 0) {
-    navigate({ to: '/' })
-    return null
+    navigate({ to: '/' });
+    return null;
   }
 
   return (
@@ -62,38 +62,38 @@ function CheckoutPage() {
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <Card className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">ФИО</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+              ФИО
+            </label>
             <Input
               required
               value={formData.fullName}
-              onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
-              }
+              onChange={e => setFormData({ ...formData, fullName: e.target.value })}
               placeholder="Иван Иванов"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Телефон</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+              Телефон
+            </label>
             <Input
               required
               type="tel"
               value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
+              onChange={e => setFormData({ ...formData, phone: e.target.value })}
               placeholder="+7 (999) 123-45-67"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Доставка</label>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+              Доставка
+            </label>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() =>
-                  setFormData({ ...formData, deliveryType: 'address' })
-                }
+                onClick={() => setFormData({ ...formData, deliveryType: 'address' })}
                 className={`flex-1 py-2 px-4 rounded-lg border-2 ${
                   formData.deliveryType === 'address'
                     ? 'border-tg-button bg-blue-50 dark:bg-blue-900'
@@ -104,9 +104,7 @@ function CheckoutPage() {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setFormData({ ...formData, deliveryType: 'pvz' })
-                }
+                onClick={() => setFormData({ ...formData, deliveryType: 'pvz' })}
                 className={`flex-1 py-2 px-4 rounded-lg border-2 ${
                   formData.deliveryType === 'pvz'
                     ? 'border-tg-button bg-blue-50 dark:bg-blue-900'
@@ -125,13 +123,9 @@ function CheckoutPage() {
             <Input
               required
               value={formData.deliveryDetails}
-              onChange={(e) =>
-                setFormData({ ...formData, deliveryDetails: e.target.value })
-              }
+              onChange={e => setFormData({ ...formData, deliveryDetails: e.target.value })}
               placeholder={
-                formData.deliveryType === 'address'
-                  ? 'ул. Ленина, д. 1, кв. 1'
-                  : 'MSK123'
+                formData.deliveryType === 'address' ? 'ул. Ленина, д. 1, кв. 1' : 'MSK123'
               }
             />
           </div>
@@ -140,7 +134,7 @@ function CheckoutPage() {
         <Card className="p-4">
           <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Ваш заказ</h3>
           <div className="space-y-2">
-            {items.map((item) => (
+            {items.map(item => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="text-gray-900 dark:text-white">
                   {item.name} × {item.quantity}
@@ -159,15 +153,10 @@ function CheckoutPage() {
           </div>
         </Card>
 
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={createOrder.isPending}
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={createOrder.isPending}>
           {createOrder.isPending ? 'Отправка...' : 'Подтвердить заказ'}
         </Button>
       </form>
     </div>
-  )
+  );
 }

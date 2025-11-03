@@ -144,9 +144,7 @@ async function migrateData() {
       select: { id: true },
     });
     if (maxProductId) {
-      await prisma.$executeRawUnsafe(
-        `SELECT setval('products_id_seq', ${maxProductId.id}, true);`
-      );
+      await prisma.$executeRawUnsafe(`SELECT setval('products_id_seq', ${maxProductId.id}, true);`);
     }
 
     const maxOrderId = await prisma.order.findFirst({
@@ -154,9 +152,7 @@ async function migrateData() {
       select: { id: true },
     });
     if (maxOrderId) {
-      await prisma.$executeRawUnsafe(
-        `SELECT setval('orders_id_seq', ${maxOrderId.id}, true);`
-      );
+      await prisma.$executeRawUnsafe(`SELECT setval('orders_id_seq', ${maxOrderId.id}, true);`);
     }
 
     console.log('✅ Sequences updated\n');
@@ -166,7 +162,6 @@ async function migrateData() {
     console.log(`  Categories: ${categories.length}`);
     console.log(`  Products: ${products.length}`);
     console.log(`  Orders: ${orders.length}`);
-
   } catch (error) {
     console.error('❌ Migration failed:', error);
     throw error;
@@ -177,8 +172,7 @@ async function migrateData() {
 }
 
 // Run migration
-migrateData()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+migrateData().catch(error => {
+  console.error(error);
+  process.exit(1);
+});

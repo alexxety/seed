@@ -1,7 +1,6 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useTelegram, useTelegramTheme } from '@/lib/telegram'
+import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// import { useTelegram, useTelegramTheme } from '@/lib/telegram'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,22 +9,24 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 function RootComponent() {
-  useTelegram()
-  useTelegramTheme()
+  console.log('🎨 RootComponent rendering');
+
+  // Отключаем Telegram хуки для тестирования
+  // useTelegram()
+  // useTelegramTheme()
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-tg-bg text-tg-text">
+      <div className="min-h-screen bg-gray-900 text-white">
         <Outlet />
       </div>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  )
+  );
 }
 
 export const Route = createRootRoute({
   component: RootComponent,
-})
+});

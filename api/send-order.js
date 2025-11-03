@@ -9,7 +9,7 @@ function sendTelegramMessage(message) {
     const data = JSON.stringify({
       chat_id: CHAT_ID,
       text: message,
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
     });
 
     const options = {
@@ -18,14 +18,14 @@ function sendTelegramMessage(message) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': data.length
-      }
+        'Content-Length': data.length,
+      },
     };
 
-    const req = https.request(options, (res) => {
+    const req = https.request(options, res => {
       let responseData = '';
 
-      res.on('data', (chunk) => {
+      res.on('data', chunk => {
         responseData += chunk;
       });
 
@@ -38,7 +38,7 @@ function sendTelegramMessage(message) {
       });
     });
 
-    req.on('error', (error) => {
+    req.on('error', error => {
       reject(error);
     });
 
@@ -72,9 +72,12 @@ module.exports = async (req, res) => {
     }
 
     // Формируем список товаров
-    const itemsList = items.map(item =>
-      `• ${item.name} - ${item.quantity} шт. × ${item.price} ₽ = ${(item.price * item.quantity).toLocaleString('ru-RU')} ₽`
-    ).join('\n');
+    const itemsList = items
+      .map(
+        item =>
+          `• ${item.name} - ${item.quantity} шт. × ${item.price} ₽ = ${(item.price * item.quantity).toLocaleString('ru-RU')} ₽`
+      )
+      .join('\n');
 
     const deliveryLabel = customer.deliveryType === 'address' ? '📍 По адресу' : '📦 СДЕК ПВЗ';
     const deliveryDetailsLabel = customer.deliveryType === 'address' ? 'Адрес' : 'Номер ПВЗ';

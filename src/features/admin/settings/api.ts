@@ -1,115 +1,52 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import { useAdminAuthStore } from '../auth/store'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
+import type { StoreSettings } from '@/types/admin';
+import { useAdminAuthStore } from '../auth/store';
 
-export interface Setting {
-  id: number
-  key: string
-  value: string
-  label: string
-  description?: string
-  type: 'text' | 'number' | 'secret' | 'textarea'
-  category: 'telegram' | 'bot' | 'system' | 'general'
-  isRequired: boolean
-  isEncrypted: boolean
-  updatedAt: string
-  createdAt: string
-  displayValue?: string
-}
-
-export interface SettingUpdate {
-  key: string
-  value: string
+interface SettingsResponse {
+  success: boolean;
+  settings: StoreSettings;
 }
 
 function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken()
+  const token = useAdminAuthStore.getState().getToken();
   return {
     Authorization: `Bearer ${token}`,
-  }
+  };
 }
 
-// Get all settings
-export function useSettings() {
+// Get store settings
+export function useStoreSettings() {
   return useQuery({
-    queryKey: ['settings'],
+    queryKey: ['admin', 'settings'],
     queryFn: async () => {
-      const response = await apiClient<{ success: boolean; settings: Setting[] }>(
-        '/api/admin/settings',
-        {
-          headers: getAuthHeaders(),
-        }
-      )
-      return response.settings
+      const response = await apiClient<SettingsResponse>('/admin/settings', {
+        headers: getAuthHeaders(),
+      });
+      return response.settings;
     },
-  })
+  });
 }
 
-// Get settings by category
-export function useSettingsByCategory(category: string) {
-  return useQuery({
-    queryKey: ['settings', 'category', category],
-    queryFn: async () => {
-      const response = await apiClient<{ success: boolean; settings: Setting[] }>(
-        `/api/admin/settings/category/${category}`,
-        {
-          headers: getAuthHeaders(),
-        }
-      )
-      return response.settings
-    },
-  })
-}
-
-// Update single setting
-export function useUpdateSetting() {
-  const queryClient = useQueryClient()
+// Update store settings
+export function useUpdateStoreSettings() {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ key, value }: SettingUpdate) => {
-      const response = await apiClient<{ success: boolean; setting: Setting }>(
-        `/api/admin/settings/${key}`,
-        {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ value }),
-        }
-      )
-      return response.setting
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings'] })
-    },
-    onError: (error: any) => {
-      console.error('Error updating setting:', error)
-      alert(`❌ Ошибка обновления настройки\n\n${error.message || 'Неизвестная ошибка'}`)
-    },
-  })
-}
-
-// Update multiple settings
-export function useUpdateSettings() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (settings: SettingUpdate[]) => {
-      const response = await apiClient<{
-        success: boolean
-        results: any[]
-        message: string
-      }>('/api/admin/settings', {
+    mutationFn: async (settings: Partial<StoreSettings>) => {
+      const response = await apiClient<SettingsResponse>('/admin/settings', {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ settings }),
-      })
-      return response
+        body: JSON.stringify(settings),
+      });
+      return response.settings;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] });
     },
     onError: (error: any) => {
-      console.error('Error updating settings:', error)
-      alert(`❌ Ошибка обновления настроек\n\n${error.message || 'Неизвестная ошибка'}`)
+      console.error('Error updating settings:', error);
+      alert(`❌ Ошибка обновления настроек\n\n${error.message || 'Неизвестная ошибка'}`);
     },
-  })
+  });
 }

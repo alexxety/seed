@@ -1,7 +1,8 @@
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public data?: any
   ) {
     super(message);
     this.name = 'ApiError';
@@ -18,7 +19,28 @@ export async function apiClient<T>(url: string, options?: Parameters<typeof fetc
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, `HTTP error! status: ${response.status}`);
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: `HTTP error! status: ${response.status}` };
+    }
+
+    const errorMessage = errorData?.message || errorData?.error || `HTTP error! status: ${response.status}`;
+
+    // Если 401 Unauthorized, перенаправляем на логин
+    if (response.status === 401 && url.startsWith('/admin/')) {
+      // Очищаем localStorage
+      localStorage.removeItem('admin-auth-storage');
+
+      // Редирект на логин
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/admin/login')) {
+        window.location.href = '/admin/login';
+      }
+    }
+
+    throw new ApiError(response.status, errorMessage, errorData);
   }
 
   return response.json();

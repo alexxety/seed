@@ -15,6 +15,9 @@ interface OrderDetailsResponse {
 
 function getAuthHeaders() {
   const token = useAdminAuthStore.getState().getToken();
+  if (!token) {
+    throw new Error('No authentication token available');
+  }
   return {
     Authorization: `Bearer ${token}`,
   };

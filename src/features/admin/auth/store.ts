@@ -53,7 +53,7 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
           return false;
         }
 
-        // Проверяем неактивность
+        // Проверяем неактивность (только если токен не истёк)
         const inactive = Date.now() - state.lastActivity > INACTIVITY_TIMEOUT;
         if (inactive) {
           state.clearAuth();
@@ -97,6 +97,20 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
         admin: state.admin,
         tenant: state.tenant,
       }),
+      // Обновляем lastActivity при загрузке из localStorage
+      onRehydrateStorage: () => state => {
+        if (state && state.token && state.expiresAt) {
+          // Проверяем, не истёк ли токен
+          const isExpired = Date.now() >= state.expiresAt;
+          if (isExpired) {
+            // Токен истёк - очищаем всё
+            state.clearAuth();
+          } else {
+            // Токен валиден - обновляем lastActivity на текущее время
+            state.updateActivity();
+          }
+        }
+      },
     }
   )
 );

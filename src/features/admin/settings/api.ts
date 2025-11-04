@@ -1,21 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiFetch } from '@/lib/api-client';
 import type { StoreSettings } from '@/types/admin';
-import { useAdminAuthStore } from '../auth/store';
 
 interface SettingsResponse {
   success: boolean;
   settings: StoreSettings;
-}
-
-function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-  return {
-    Authorization: `Bearer ${token}`,
-  };
 }
 
 // Get store settings
@@ -23,9 +12,7 @@ export function useStoreSettings() {
   return useQuery({
     queryKey: ['admin', 'settings'],
     queryFn: async () => {
-      const response = await apiClient<SettingsResponse>('/admin/settings', {
-        headers: getAuthHeaders(),
-      });
+      const response = await apiFetch<SettingsResponse>('/admin/settings');
       return response.settings;
     },
   });
@@ -37,9 +24,8 @@ export function useUpdateStoreSettings() {
 
   return useMutation({
     mutationFn: async (settings: Partial<StoreSettings>) => {
-      const response = await apiClient<SettingsResponse>('/admin/settings', {
+      const response = await apiFetch<SettingsResponse>('/admin/settings', {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify(settings),
       });
       return response.settings;

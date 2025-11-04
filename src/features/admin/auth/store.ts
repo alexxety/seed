@@ -21,6 +21,14 @@ interface AdminAuthStore {
 
 const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 час в миллисекундах
 
+// ============================================================================
+// STORAGE KEY HELPER — Per-host isolation (Standard-2025)
+// ============================================================================
+const getStorageKey = (): string => {
+  if (typeof window === 'undefined') return 'admin-auth-storage:default';
+  return `admin-auth-storage:${window.location.host}`;
+};
+
 export const useAdminAuthStore = create<AdminAuthStore>()(
   persist(
     (set, get) => ({
@@ -89,7 +97,7 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
       },
     }),
     {
-      name: 'admin-auth-storage',
+      name: getStorageKey(),
       partialize: state => ({
         token: state.token,
         expiresAt: state.expiresAt,

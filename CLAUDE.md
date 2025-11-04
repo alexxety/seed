@@ -96,6 +96,67 @@ Endpoint	Content-Type	Notes
 
 ⸻
 
+🔐 Token Leak Prevention (FAIL on any leak)
+
+### Prohibited in ALL outputs (code, logs, CI, PRs, terminal):
+- JWT tokens (full or partial)
+- Password hashes (bcrypt, argon2, etc.)
+- API keys (OpenAI, Stripe, Telegram, etc.)
+- Database credentials (connection strings, passwords)
+- Session tokens
+- Authorization headers with real values
+- Private keys (SSH, SSL, etc.)
+
+### Masking rules (Standard-2025):
+
+```typescript
+// ❌ WRONG: Full token exposed
+console.log('Token:', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+console.log('Authorization: Bearer', token);
+
+// ✅ CORRECT: Masked token
+console.log('Token:', token ? `${token.slice(0, 10)}...[REDACTED]` : 'null');
+console.log('Authorization:', '[REDACTED]');
+```
+
+```bash
+# ❌ WRONG: Token in git commit message
+git commit -m "Fix auth with token eyJhbGciOiJIUz..."
+
+# ✅ CORRECT: No sensitive data
+git commit -m "Fix authentication flow"
+```
+
+### CI verification (MUST pass before deploy):
+
+```bash
+# Any token leak = FAIL (not warning)
+grep -rE "eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}" dist/ && exit 1
+
+# Password hashes
+grep -rE "\$2[ayb]\$[0-9]{2}\$[A-Za-z0-9./]{53}" dist/ && exit 1
+
+# Connection strings
+grep -rE "postgresql://[^:]+:[^@]+@" dist/ && exit 1
+```
+
+### Examples of leaks to prevent:
+- ❌ Git commits with tokens in messages or diffs
+- ❌ Console.log with full JWT tokens
+- ❌ Error messages with credentials
+- ❌ CI/CD output with secrets
+- ❌ Pull request descriptions with keys
+- ❌ Test fixtures with real tokens (use mock data)
+- ❌ Environment variable values printed to logs
+
+### Enforcement:
+- CI gate **blocks merge** if any leak detected
+- No exceptions, no "it's just dev token" bypass
+- All secrets → .env (never committed)
+- All logs → masked values only
+
+⸻
+
 🛠 Prod Invariants & Deploy Guardrails
 
 1) Порты/прокси

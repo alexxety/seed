@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiFetch } from '@/lib/api-client';
 import type { Order, UpdateOrderStatusRequest } from '@/types/admin';
-import { useAdminAuthStore } from '../auth/store';
 
 interface OrdersResponse {
   success: boolean;
@@ -13,23 +12,11 @@ interface OrderDetailsResponse {
   order: Order;
 }
 
-function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export function useAdminOrders() {
   return useQuery({
     queryKey: ['admin', 'orders'],
     queryFn: async () => {
-      const data = await apiClient<OrdersResponse>('/admin/orders', {
-        headers: getAuthHeaders(),
-      });
+      const data = await apiFetch<OrdersResponse>('/admin/orders');
       return data.orders;
     },
     staleTime: 1000 * 30, // 30 секунд
@@ -40,9 +27,7 @@ export function useAdminOrder(id: string) {
   return useQuery({
     queryKey: ['admin', 'orders', id],
     queryFn: async () => {
-      const data = await apiClient<OrderDetailsResponse>(`/admin/orders/${id}`, {
-        headers: getAuthHeaders(),
-      });
+      const data = await apiFetch<OrderDetailsResponse>(`/admin/orders/${id}`);
       return data.order;
     },
     enabled: !!id,
@@ -62,11 +47,10 @@ export function useUpdateOrderStatus() {
       status: UpdateOrderStatusRequest['status'];
       paid?: boolean;
     }) => {
-      const data = await apiClient<{ success: boolean; order: Order }>(
+      const data = await apiFetch<{ success: boolean; order: Order }>(
         `/admin/orders/${id}/status`,
         {
           method: 'PATCH',
-          headers: getAuthHeaders(),
           body: JSON.stringify({ status, paid }),
         }
       );

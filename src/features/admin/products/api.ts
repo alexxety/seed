@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiFetch } from '@/lib/api-client';
 import type { Product, ProductFormData } from '@/types/admin';
-import { useAdminAuthStore } from '../auth/store';
 
 interface ProductsResponse {
   success: boolean;
@@ -13,23 +12,11 @@ interface ProductResponse {
   product: Product;
 }
 
-function getAuthHeaders() {
-  const token = useAdminAuthStore.getState().getToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export function useAdminProducts() {
   return useQuery({
     queryKey: ['admin', 'products'],
     queryFn: async () => {
-      const data = await apiClient<ProductsResponse>('/admin/products', {
-        headers: getAuthHeaders(),
-      });
+      const data = await apiFetch<ProductsResponse>('/admin/products');
       return data.products;
     },
   });
@@ -39,9 +26,7 @@ export function useAdminProduct(id: string) {
   return useQuery({
     queryKey: ['admin', 'products', id],
     queryFn: async () => {
-      const data = await apiClient<ProductResponse>(`/admin/products/${id}`, {
-        headers: getAuthHeaders(),
-      });
+      const data = await apiFetch<ProductResponse>(`/admin/products/${id}`);
       return data.product;
     },
     enabled: !!id,
@@ -53,9 +38,8 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const response = await apiClient<ProductResponse>('/admin/products', {
+      const response = await apiFetch<ProductResponse>('/admin/products', {
         method: 'POST',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: data.name,
           description: data.description,
@@ -78,9 +62,8 @@ export function useUpdateProduct() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProductFormData }) => {
-      const response = await apiClient<ProductResponse>(`/admin/products/${id}`, {
+      const response = await apiFetch<ProductResponse>(`/admin/products/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: data.name,
           description: data.description,
@@ -103,9 +86,8 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiClient<{ success: boolean }>(`/admin/products/${id}`, {
+      await apiFetch<{ success: boolean }>(`/admin/products/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(),
       });
     },
     onSuccess: () => {

@@ -22,7 +22,6 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-  getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
@@ -33,16 +32,14 @@ import {
   updateSetting,
   updateSettings,
   initializeSettings,
-  createShop,
   getAllShops,
   getShopById,
   updateShop,
   updateShopStatus,
   deleteShop,
-  isSubdomainAvailable,
 } from './database.js';
 
-import { createShopDNS, deleteShopDNS } from './cloudflare-service.js';
+import { deleteShopDNS } from './cloudflare-service.js';
 
 import {
   createTenant,

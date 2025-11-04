@@ -40,9 +40,8 @@ const router: Router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
   console.log('[TenantAdmin GET /] Request received');
   try {
-    // In bundled dist/server.js, __dirname points to dist/
-    const __dirname_dist = path.dirname(__filename);
-    const indexPath = path.join(__dirname_dist, 'public', 'index.html');
+    // Standard-2025: Use path.resolve with already-defined __dirname
+    const indexPath = path.resolve(__dirname, 'public/index.html');
     console.log('[TenantAdmin GET /] Serving:', indexPath);
     res.sendFile(indexPath);
   } catch (error) {
@@ -482,11 +481,10 @@ router.get('*', async (req: Request, res: Response) => {
   }
 
   try {
-    // In bundled dist/server.js, __dirname is 'dist/'
-    // We need dist/public/index.html
-    // So we go up one level: dist/ -> root, then into public/
-    const __dirname_dist = path.dirname(__filename);
-    const indexPath = path.join(__dirname_dist, '..', 'public', 'index.html');
+    // Standard-2025: Use path.resolve with already-defined __dirname
+    // In bundled dist/server.js, __dirname points to 'dist/'
+    // So path.resolve(__dirname, 'public/index.html') = 'dist/public/index.html'
+    const indexPath = path.resolve(__dirname, 'public/index.html');
     console.log('[TenantAdmin SPA Fallback] Serving:', indexPath);
     res.sendFile(indexPath);
   } catch (error) {

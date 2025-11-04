@@ -4,6 +4,8 @@ node_modules/
 # Build output
 dist/
 build/
+web-dist/
+static-assets/
 
 # Logs
 *.log
@@ -13,6 +15,9 @@ npm-debug.log*
 .env
 .env.local
 .env.production
+.env.prod
+.env.dev
+.env.ci.*
 
 # Editor directories
 .vscode/

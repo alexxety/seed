@@ -16,6 +16,57 @@
 - UUID строго `uuid_generate_v4()` (⛔ запрещён `gen_random_uuid()`).
 - Никакие секреты/ключи/токены не выводятся в логи, CI, PR, терминал.
 
+**Admin Routing (Standard-2025):**
+- Admin API endpoints: `/admin/api/*` (NOT `/admin/*`) — all protected routes
+- Public endpoints: POST `/admin/login` — authentication
+- SPA pages: GET `/admin/*` (except `/admin/api/*`) — serve index.html
+- Routing logic: PATH-based only (⛔ no Accept header checks)
+- SPA fallback positioned BEFORE auth middleware to allow HTML serving
+- This ensures F5 refresh on `/admin/login` returns HTML 200, not JSON 401
+
+---
+
+## 🌍 ENVIRONMENT ISOLATION POLICY (Standard-2025 — authoritative)
+
+**PROD**
+- Base domain: `x-bro.com`
+- Tenants: `{slug}.x-bro.com`
+- Port: 3000
+- Database: `seedshop_prod`
+- PM2: `telegram-shop-prod`
+
+**DEV**
+- Base domain: `dev.x-bro.com`
+- Tenants: `{slug}.dev.x-bro.com`
+- Port: 3001
+- Database: `seedshop_dev`
+- PM2: `telegram-shop-dev`
+
+**Rules (must NOT be violated)**
+1. 🔥 Нельзя смешивать DEV и PROD в одном доменном пространстве
+2. 🔥 Нельзя создавать фейковые slugs типа `dev`, `dev-admin`, `deva`
+3. ✅ Tenant slugs в DEV и PROD всегда одинаковые
+4. ✅ DEPLOY выполняется только через `scripts/deploy.sh <env>`
+5. ✅ VERIFY выполняется так:
+   - `npm run verify:prod` → проверяет `*.x-bro.com`
+   - `npm run verify:dev` → проверяет `*.dev.x-bro.com`
+6. ⛔ В `package.json` запрещено хранить SSH, IP, rsync
+7. ⛔ Запрещено automatic APPLY на PROD
+8. ⛔ Оба окружения имеют отдельные `.env.*` и `.env.ci.*`
+9. ✅ LocalStorage key = `admin-auth-storage:${window.location.host}`
+10. ✅ Весь build/deploy запускается из `dist/`, не `src/`
+11. ✅ `BASE_DOMAIN` обязателен в `.env.dev` и `.env.prod`
+
+**Required DEV domains:**
+- `demo.dev.x-bro.com`
+- `myshop.dev.x-bro.com`
+- `testadmin.dev.x-bro.com`
+- `testshop.dev.x-bro.com`
+
+**After each release:**
+- `deploy:dev` → `verify:dev`
+- `deploy:prod` → `verify:prod` → CF purge (addressed)
+
 ---
 
 ## 🧩 Middleware Contract (strict order)
@@ -160,8 +211,8 @@ grep -rE "postgresql://[^:]+:[^@]+@" dist/ && exit 1
 🛠 Prod Invariants & Deploy Guardrails
 
 1) Порты/прокси
-   • PROD NGINX проксирует backend на фиксированный порт (сейчас: 3001).  
-   • ⛔ Запрещено менять PORT в PM2/ecosystem.* без проверки NGINX upstream и его синхронизации.  
+   • PROD NGINX проксирует backend на порт 3000, DEV на порт 3001.
+   • ⛔ Запрещено менять PORT в PM2/ecosystem.* без проверки NGINX upstream и его синхронизации.
    • Если требуется изменить порт — сначала PR с RFC и миграционный план: (а) правка NGINX, (б) перезагрузка NGINX, (в) смена PORT в PM2, (г) проверка /health.
 
 2) Пути до статики

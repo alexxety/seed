@@ -5,6 +5,7 @@ import { getGlobalPrisma } from './middleware.js';
 export async function resolveTenant(req: Request) {
   const db = getGlobalPrisma();
 
+  // Priority 1: X-Tenant header (for testing/API)
   const tenantHeader = req.headers['x-tenant'] as string | undefined;
   if (tenantHeader) {
     const tenant = await getTenantBySlug(db, tenantHeader);
@@ -14,18 +15,32 @@ export async function resolveTenant(req: Request) {
     return tenant;
   }
 
+  // Priority 2: Extract from hostname based on BASE_DOMAIN
   const host = req.headers.host || '';
-  const parts = host.split('.');
+  const baseDomain = process.env.BASE_DOMAIN || 'x-bro.com';
 
-  const infraDomains = ['www', 'admin', 'seed', 'dev', 'dev-admin', 'deva'];
+  // Infrastructure subdomains (same for PROD and DEV)
+  const infraDomains = ['www', 'admin', 'seed'];
 
-  if (parts.length >= 3) {
-    const subdomain = parts[0];
+  // Parse hostname: demo.dev.x-bro.com or demo.x-bro.com
+  // Remove port if present (e.g., localhost:3000)
+  const hostname = host.split(':')[0];
 
+  // Check if hostname matches pattern: {slug}.{BASE_DOMAIN}
+  // Example: demo.dev.x-bro.com → slug="demo" (when BASE_DOMAIN=dev.x-bro.com)
+  // Example: demo.x-bro.com → slug="demo" (when BASE_DOMAIN=x-bro.com)
+  const domainRegex = new RegExp(`^([^.]+)\\.${baseDomain.replace(/\./g, '\\.')}$`);
+  const match = hostname.match(domainRegex);
+
+  if (match) {
+    const subdomain = match[1];
+
+    // Skip infrastructure domains
     if (infraDomains.includes(subdomain)) {
       return null;
     }
 
+    // Resolve tenant by slug
     const tenant = await getTenantBySlug(db, subdomain);
     if (!tenant) {
       throw new Error(`Tenant для поддомена "${subdomain}" не найден`);

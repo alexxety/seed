@@ -15,7 +15,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "typecheck": "tsc --noEmit --project tsconfig.json && tsc --noEmit --project tsconfig.server.json",
-    "verify": "bash scripts/verify_standard.sh",
+    "verify": "bash scripts/verify.sh prod",
+    "verify:prod": "bash scripts/verify.sh prod",
+    "verify:dev": "bash scripts/verify.sh dev",
+    "verify:standard": "bash scripts/verify_standard.sh",
     "init-db": "node init-data.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -24,8 +27,8 @@
     "db:seed": "node init-data.js",
     "db:migrate": "node migrate-sqlite-to-postgres.js",
     "create:tenant": "node scripts/create-tenant.js",
-    "deploy:dev": "npm run build:all && rsync -avz --delete dist/ root@46.224.19.173:/var/www/telegram-shop-dev/dist/ && ssh root@46.224.19.173 'pm2 restart telegram-shop-dev'",
-    "deploy:prod": "npm run build:all && rsync -avz --delete dist/ root@46.224.19.173:/var/www/telegram-shop/dist/ && ssh root@46.224.19.173 'pm2 restart telegram-shop-prod'",
+    "deploy:dev": "bash scripts/deploy.sh dev",
+    "deploy:prod": "bash scripts/deploy.sh prod",
     "postinstall": "prisma generate"
   },
   "dependencies": {

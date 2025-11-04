@@ -26,6 +26,33 @@
 
 ---
 
+## ✅ API Prefix Rules (Standard-2025)
+
+**Super Admin API:** `/admin/api/*`
+- Purpose: Manages tenants (public.tenants table)
+- Authentication: Requires superadmin JWT token
+- Data scope: Cross-tenant operations (global view)
+- ID format: UUID strings only
+- Examples:
+  - `GET /admin/api/tenants` — list all tenants
+  - `GET /admin/api/tenants/:id` — get tenant by UUID
+  - `PUT /admin/api/tenants/:id/status` — update tenant status
+  - `DELETE /admin/api/tenants/:id` — delete tenant
+
+**Tenant Admin API:** `/api/admin/*`
+- Purpose: Tenant-scoped operations (t_{uuid}.* tables)
+- Authentication: Requires tenant admin JWT token via req.db
+- Data scope: Single tenant only (isolated by middleware)
+- Examples:
+  - `GET /api/admin/products` — list products for current tenant
+  - `POST /api/admin/categories` — create category in current tenant
+  - `PUT /api/admin/orders/:id` — update order in current tenant
+
+⚠️ **These prefixes are NOT interchangeable and must NOT overlap.**
+⚠️ **Any deviation = FAIL in Standard-2025 verification.**
+
+---
+
 ## 🌍 ENVIRONMENT ISOLATION POLICY (Standard-2025 — authoritative)
 
 **PROD**

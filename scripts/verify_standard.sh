@@ -58,7 +58,7 @@ NC='\033[0m' # No Color
 # ============================================================================
 FAIL_COUNT=0
 WARN_COUNT=0
-TOTAL_CHECKS=13
+TOTAL_CHECKS=16
 
 # Environment detection (can be overridden via ENV variable)
 ENV="${ENV:-prod}"
@@ -346,13 +346,13 @@ check_admin_login_html() {
     return
   fi
 
-  # Check if /admin/api/products returns JSON 401 without token
-  local api_response=$(ssh "$REMOTE_HOST" "curl -s https://$TEST_DOMAIN/admin/api/products 2>/dev/null" 2>/dev/null)
+  # Check if /api/admin/products returns JSON 401 without token
+  local api_response=$(ssh "$REMOTE_HOST" "curl -s https://$TEST_DOMAIN/api/admin/products 2>/dev/null" 2>/dev/null)
 
   if echo "$api_response" | grep -q '"error"'; then
-    print_pass "/admin/api/products returns JSON 401"
+    print_pass "/api/admin/products returns JSON 401"
   else
-    print_fail "/admin/api/products does NOT return JSON 401 (got: ${api_response:0:50}...)"
+    print_fail "/api/admin/products does NOT return JSON 401 (got: ${api_response:0:50}...)"
     return
   fi
 
@@ -376,13 +376,13 @@ check_accept_header() {
     print_fail "/admin/login does NOT ignore Accept header (got: $html_with_json_accept)"
   fi
 
-  # 3. Real test: /admin/api/products must return JSON even with Accept: text/html
-  local json_with_html_accept=$(ssh "$REMOTE_HOST" "curl -sI -H 'Accept: text/html' https://$TEST_DOMAIN/admin/api/products 2>/dev/null" 2>/dev/null | grep -i "content-type" | head -1)
+  # 3. Real test: /api/admin/products must return JSON even with Accept: text/html
+  local json_with_html_accept=$(ssh "$REMOTE_HOST" "curl -sI -H 'Accept: text/html' https://$TEST_DOMAIN/api/admin/products 2>/dev/null" 2>/dev/null | grep -i "content-type" | head -1)
 
   if echo "$json_with_html_accept" | grep -qi "application/json"; then
-    print_pass "/admin/api/products returns JSON even with Accept: text/html"
+    print_pass "/api/admin/products returns JSON even with Accept: text/html"
   else
-    print_fail "/admin/api/products affected by Accept header (got: $json_with_html_accept)"
+    print_fail "/api/admin/products affected by Accept header (got: $json_with_html_accept)"
   fi
 }
 
@@ -585,6 +585,70 @@ check_no_hardcoded_domains() {
   fi
 }
 
+check_no_legacy_superadmin_routes() {
+  print_section 14 $TOTAL_CHECKS "Checking for legacy /api/admin/shops in superadmin"
+
+  local violations=0
+
+  # 1. Check frontend superadmin code for old routes
+  if git grep -q "/api/admin/shops" src/features/superadmin/ 2>/dev/null; then
+    print_fail "Legacy superadmin route '/api/admin/shops' found in src/features/superadmin/"
+    violations=$((violations + 1))
+  fi
+
+  # 2. Check for old /api/superadmin/* routes
+  if git grep -q "/api/superadmin/" src/features/superadmin/ 2>/dev/null; then
+    print_fail "Legacy '/api/superadmin/' route found (should be /admin/api/)"
+    violations=$((violations + 1))
+  fi
+
+  if [ $violations -eq 0 ]; then
+    print_pass "No legacy superadmin routes found"
+  fi
+}
+
+check_no_number_ids_in_superadmin() {
+  print_section 15 $TOTAL_CHECKS "Checking for id: number in superadmin (should be string)"
+
+  # Check for id: number types in superadmin (must be string for UUID)
+  if git grep -E "id:\s*number" src/features/superadmin/ 2>/dev/null | head -3; then
+    print_fail "Found 'id: number' in superadmin (must be 'id: string' for UUID)"
+    return
+  fi
+
+  # Check for Number(shop.id) conversions (shouldn't exist)
+  if git grep -E "Number\(.*\.id\)" src/features/superadmin/ 2>/dev/null | head -3; then
+    print_fail "Found 'Number(*.id)' conversion in superadmin (IDs are UUID strings)"
+    return
+  fi
+
+  # Check for parseInt(shop.id) conversions (shouldn't exist)
+  if git grep -E "parseInt\(.*\.id" src/features/superadmin/ 2>/dev/null | head -3; then
+    print_fail "Found 'parseInt(*.id)' conversion in superadmin (IDs are UUID strings)"
+    return
+  fi
+
+  print_pass "All superadmin IDs use string type (UUID compliant)"
+}
+
+check_no_legacy_database_imports() {
+  print_section 16 $TOTAL_CHECKS "Checking for legacy database.ts imports"
+
+  # 1. Check server/ folder for old database imports
+  if git grep -E "from ['\"]\.(/\.\.)?/database['\"]" server/ 2>/dev/null; then
+    print_fail "Legacy database import found in server/"
+    return
+  fi
+
+  # 2. Check server/ folder for database.js imports
+  if git grep -E "from ['\"]\.(/\.\.)?/database\.js['\"]" server/ 2>/dev/null; then
+    print_fail "Legacy database.js import found in server/"
+    return
+  fi
+
+  print_pass "No legacy database imports found"
+}
+
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
@@ -605,6 +669,9 @@ main() {
   check_prisma_search_path
   check_base_domain_env
   check_no_hardcoded_domains
+  check_no_legacy_superadmin_routes
+  check_no_number_ids_in_superadmin
+  check_no_legacy_database_imports
 
   # Final summary
   echo ""

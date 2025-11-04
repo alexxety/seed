@@ -12,7 +12,7 @@ export function useStoreSettings() {
   return useQuery({
     queryKey: ['admin', 'settings'],
     queryFn: async () => {
-      const response = await apiFetch<SettingsResponse>('/admin/settings');
+      const response = await apiFetch<SettingsResponse>('/admin/api/settings');
       return response.settings;
     },
   });
@@ -24,7 +24,7 @@ export function useUpdateStoreSettings() {
 
   return useMutation({
     mutationFn: async (settings: Partial<StoreSettings>) => {
-      const response = await apiFetch<SettingsResponse>('/admin/settings', {
+      const response = await apiFetch<SettingsResponse>('/admin/api/settings', {
         method: 'PUT',
         body: JSON.stringify(settings),
       });

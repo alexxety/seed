@@ -106,20 +106,52 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// SPA fallback moved to END - see after all API routes
+// ============================================================================
+// SPA FALLBACK (MUST BE BEFORE AUTH MIDDLEWARE)
+// ============================================================================
+
+/**
+ * GET /admin/*
+ * SPA fallback - serve index.html for all non-API GET requests
+ *
+ * Standard-2025: PATH-based routing (no Accept header check)
+ * - GET /admin/* → index.html (SPA, no auth required for serving HTML)
+ * - GET /admin/api/* → skip to API routes below (with auth)
+ *
+ * Why before auth middleware:
+ * - Allows /admin/login page to load without 401
+ * - Allows F5 refresh on any /admin/* page
+ * - API routes still protected by middleware below
+ */
+router.get('*', (req: Request, res: Response, next) => {
+  // If API request (/admin/api/*), skip to protected routes
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+
+  // Serve SPA for all other GET requests
+  try {
+    const indexPath = path.resolve(__dirname, 'public/index.html');
+    console.log('[TenantAdmin SPA Fallback] Serving:', indexPath, 'for path:', req.path);
+    res.sendFile(indexPath);
+  } catch (error) {
+    console.error('[TenantAdmin] SPA fallback error:', error);
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to load page' });
+  }
+});
 
 // ============================================================================
-// PROTECTED ROUTES (require auth)
+// PROTECTED API ROUTES (require auth)
 // ============================================================================
 
 // Apply authentication middleware to all routes below
 router.use(requireTenantAdmin);
 
 /**
- * GET /admin/me
+ * GET /admin/api/me
  * Get current admin info
  */
-router.get('/me', async (req: Request, res: Response) => {
+router.get('/api/me', async (req: Request, res: Response) => {
   const admin = (req as any).admin;
   const tenant = (req as any).context?.tenant;
 
@@ -131,10 +163,10 @@ router.get('/me', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /admin/dashboard
+ * GET /admin/api/dashboard
  * Get dashboard statistics
  */
-router.get('/dashboard', async (req: Request, res: Response) => {
+router.get('/api/dashboard', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const stats = await getDashboardStats(db);
@@ -157,10 +189,10 @@ router.get('/dashboard', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /admin/products
+ * GET /admin/api/products
  * List all products for this tenant
  */
-router.get('/products', async (req: Request, res: Response) => {
+router.get('/api/products', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const products = await getAllProductsForAdmin(db);
@@ -179,10 +211,10 @@ router.get('/products', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /admin/products/:id
+ * GET /admin/api/products/:id
  * Get product by ID with full details
  */
-router.get('/products/:id', async (req: Request, res: Response) => {
+router.get('/api/products/:id', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { id } = req.params;
@@ -210,10 +242,10 @@ router.get('/products/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /admin/products
+ * POST /admin/api/products
  * Create new product
  */
-router.post('/products', async (req: Request, res: Response) => {
+router.post('/api/products', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { name, description, vendor, category, tags, is_active } = req.body;
@@ -248,10 +280,10 @@ router.post('/products', async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /admin/products/:id
+ * PUT /admin/api/products/:id
  * Update product
  */
-router.put('/products/:id', async (req: Request, res: Response) => {
+router.put('/api/products/:id', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { id } = req.params;
@@ -287,10 +319,10 @@ router.put('/products/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /admin/products/:id
+ * DELETE /admin/api/products/:id
  * Delete product
  */
-router.delete('/products/:id', async (req: Request, res: Response) => {
+router.delete('/api/products/:id', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { id } = req.params;
@@ -315,10 +347,10 @@ router.delete('/products/:id', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /admin/orders
+ * GET /admin/api/orders
  * List all orders for this tenant
  */
-router.get('/orders', async (req: Request, res: Response) => {
+router.get('/api/orders', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const limit = parseInt(req.query.limit as string) || 50;
@@ -339,10 +371,10 @@ router.get('/orders', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /admin/orders/:id
+ * GET /admin/api/orders/:id
  * Get order by ID with full details
  */
-router.get('/orders/:id', async (req: Request, res: Response) => {
+router.get('/api/orders/:id', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { id } = req.params;
@@ -370,10 +402,10 @@ router.get('/orders/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /admin/orders/:id/status
+ * PATCH /admin/api/orders/:id/status
  * Update order status
  */
-router.patch('/orders/:id/status', async (req: Request, res: Response) => {
+router.patch('/api/orders/:id/status', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { id } = req.params;
@@ -413,10 +445,10 @@ router.patch('/orders/:id/status', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /admin/settings
+ * GET /admin/api/settings
  * Get store settings
  */
-router.get('/settings', async (req: Request, res: Response) => {
+router.get('/api/settings', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const settings = await getStoreSettingsForAdmin(db);
@@ -435,10 +467,10 @@ router.get('/settings', async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /admin/settings
+ * PUT /admin/api/settings
  * Update store settings
  */
-router.put('/settings', async (req: Request, res: Response) => {
+router.put('/api/settings', async (req: Request, res: Response) => {
   try {
     const db = (req as any).db;
     const { title, brand_color, logo_path, currency } = req.body;
@@ -459,39 +491,6 @@ router.put('/settings', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: error.message,
-    });
-  }
-});
-
-// ============================================================================
-// SPA FALLBACK (MUST BE LAST - after all API routes)
-// ============================================================================
-
-/**
- * GET /admin/*
- * SPA fallback - serve index.html for HTML requests only
- * This MUST be LAST to avoid intercepting API routes
- * Only serves HTML for browser navigation, not API calls
- */
-router.get('*', async (req: Request, res: Response) => {
-  // Only serve HTML for browser requests, not API calls
-  const acceptsHtml = req.accepts('html');
-  if (!acceptsHtml) {
-    return res.status(404).json({ error: 'Not Found' });
-  }
-
-  try {
-    // Standard-2025: Use path.resolve with already-defined __dirname
-    // In bundled dist/server.js, __dirname points to 'dist/'
-    // So path.resolve(__dirname, 'public/index.html') = 'dist/public/index.html'
-    const indexPath = path.resolve(__dirname, 'public/index.html');
-    console.log('[TenantAdmin SPA Fallback] Serving:', indexPath);
-    res.sendFile(indexPath);
-  } catch (error) {
-    console.error('[TenantAdmin] SPA fallback error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to load page',
     });
   }
 });

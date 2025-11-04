@@ -35,10 +35,17 @@ const getStorageKey = (): string => {
 };
 
 // ============================================================================
-// PATH HELPER — Distinguish /admin/* from /superadmin/*
+// PATH HELPER — Detect admin paths for Authorization header
 // ============================================================================
+
+/**
+ * Check if URL is an admin path that may need Authorization header
+ * Covers all /admin/* paths (both API and UI routes)
+ * Header is only injected if token exists in storage
+ */
 const isAdminPath = (url: string): boolean => {
-  return url.startsWith('/admin/') || url.startsWith('/api/admin/');
+  // All /admin/* paths (includes /admin/api/* and /admin/login)
+  return url.startsWith('/admin/');
 };
 
 // ============================================================================

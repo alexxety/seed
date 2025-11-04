@@ -16,7 +16,7 @@ export function useAdminOrders() {
   return useQuery({
     queryKey: ['admin', 'orders'],
     queryFn: async () => {
-      const data = await apiFetch<OrdersResponse>('/admin/orders');
+      const data = await apiFetch<OrdersResponse>('/admin/api/orders');
       return data.orders;
     },
     staleTime: 1000 * 30, // 30 секунд
@@ -27,7 +27,7 @@ export function useAdminOrder(id: string) {
   return useQuery({
     queryKey: ['admin', 'orders', id],
     queryFn: async () => {
-      const data = await apiFetch<OrderDetailsResponse>(`/admin/orders/${id}`);
+      const data = await apiFetch<OrderDetailsResponse>(`/admin/api/orders/${id}`);
       return data.order;
     },
     enabled: !!id,
@@ -48,7 +48,7 @@ export function useUpdateOrderStatus() {
       paid?: boolean;
     }) => {
       const data = await apiFetch<{ success: boolean; order: Order }>(
-        `/admin/orders/${id}/status`,
+        `/admin/api/orders/${id}/status`,
         {
           method: 'PATCH',
           body: JSON.stringify({ status, paid }),

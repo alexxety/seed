@@ -8,7 +8,7 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: async (data: CategoryFormData) => {
       const response = await apiFetch<{ success: boolean; category: Category }>(
-        '/api/admin/categories',
+        '/admin/api/categories',
         {
           method: 'POST',
           body: JSON.stringify(data),
@@ -32,7 +32,7 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CategoryFormData }) => {
       const response = await apiFetch<{ success: boolean; category: Category }>(
-        `/api/admin/categories/${id}`,
+        `/admin/api/categories/${id}`,
         {
           method: 'PUT',
           body: JSON.stringify(data),
@@ -55,7 +55,7 @@ export function useDeleteCategory() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiFetch<{ success: boolean }>(`/api/admin/categories/${id}`, {
+      await apiFetch<{ success: boolean }>(`/admin/api/categories/${id}`, {
         method: 'DELETE',
       });
     },

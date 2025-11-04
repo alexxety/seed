@@ -11,7 +11,7 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['admin', 'dashboard'],
     queryFn: async () => {
-      const response = await apiFetch<DashboardResponse>('/admin/dashboard');
+      const response = await apiFetch<DashboardResponse>('/admin/api/dashboard');
       return response.stats;
     },
     staleTime: 1000 * 60, // Cache for 1 minute

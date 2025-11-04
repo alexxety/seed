@@ -16,7 +16,7 @@ export function useAdminProducts() {
   return useQuery({
     queryKey: ['admin', 'products'],
     queryFn: async () => {
-      const data = await apiFetch<ProductsResponse>('/admin/products');
+      const data = await apiFetch<ProductsResponse>('/admin/api/products');
       return data.products;
     },
   });
@@ -26,7 +26,7 @@ export function useAdminProduct(id: string) {
   return useQuery({
     queryKey: ['admin', 'products', id],
     queryFn: async () => {
-      const data = await apiFetch<ProductResponse>(`/admin/products/${id}`);
+      const data = await apiFetch<ProductResponse>(`/admin/api/products/${id}`);
       return data.product;
     },
     enabled: !!id,
@@ -38,7 +38,7 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const response = await apiFetch<ProductResponse>('/admin/products', {
+      const response = await apiFetch<ProductResponse>('/admin/api/products', {
         method: 'POST',
         body: JSON.stringify({
           name: data.name,
@@ -62,7 +62,7 @@ export function useUpdateProduct() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProductFormData }) => {
-      const response = await apiFetch<ProductResponse>(`/admin/products/${id}`, {
+      const response = await apiFetch<ProductResponse>(`/admin/api/products/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
           name: data.name,
@@ -86,7 +86,7 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiFetch<{ success: boolean }>(`/admin/products/${id}`, {
+      await apiFetch<{ success: boolean }>(`/admin/api/products/${id}`, {
         method: 'DELETE',
       });
     },

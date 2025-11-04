@@ -48,3 +48,6 @@ orders.db-journal
 database-sqlite.js.backup
 
 /generated/prisma
+
+# Migration archives (one-time scripts)
+scripts/migrations/archive/

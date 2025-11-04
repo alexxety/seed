@@ -25,7 +25,7 @@ function ShopsPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: 'active' | 'blocked' | 'pending' }) =>
+    mutationFn: ({ id, status }: { id: string; status: 'active' | 'blocked' | 'pending' }) =>
       updateShopStatus(id, status, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superadmin-shops'] });
@@ -33,7 +33,7 @@ function ShopsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteShop(id, token!),
+    mutationFn: (id: string) => deleteShop(id, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['superadmin-shops'] });
     },
@@ -69,7 +69,7 @@ function ShopsPage() {
         `Вы уверены, что хотите ${newStatus === 'blocked' ? 'заблокировать' : 'активировать'} магазин ${shop.subdomain}.x-bro.com?`
       )
     ) {
-      updateStatusMutation.mutate({ id: Number(shop.id), status: newStatus });
+      updateStatusMutation.mutate({ id: shop.id, status: newStatus });
     }
   };
 
@@ -79,7 +79,7 @@ function ShopsPage() {
         `⚠️ ВНИМАНИЕ! Вы собираетесь удалить магазин ${shop.subdomain}.x-bro.com и его DNS запись.\n\nЭто действие необратимо!\n\nПродолжить?`
       )
     ) {
-      deleteMutation.mutate(Number(shop.id));
+      deleteMutation.mutate(shop.id);
     }
   };
 

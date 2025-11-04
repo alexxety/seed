@@ -1,7 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 
 export interface Shop {
-  id: string | number; // Support both UUID (new tenants) and number (legacy)
+  id: string; // UUID only (Standard-2025)
   subdomain: string;
   ownerName: string;
   ownerEmail: string;
@@ -44,10 +44,10 @@ export interface UpdateShopData {
 
 /**
  * Get all shops (requires super-admin auth)
- * Now reads from tenants table for multi-tenancy support
+ * Superadmin API: /admin/api/tenants (Standard-2025)
  */
 export async function getAllShops(token: string): Promise<Shop[]> {
-  const data = await apiClient<ShopsResponse>('/api/superadmin/shops', {
+  const data = await apiClient<ShopsResponse>('/admin/api/tenants', {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -56,10 +56,11 @@ export async function getAllShops(token: string): Promise<Shop[]> {
 }
 
 /**
- * Get single shop by ID (requires super-admin auth)
+ * Get single tenant by ID (requires super-admin auth)
+ * Superadmin API: /admin/api/tenants/:id
  */
-export async function getShopById(id: number, token: string): Promise<Shop> {
-  const data = await apiClient<ShopResponse>(`/api/admin/shops/${id}`, {
+export async function getShopById(id: string, token: string): Promise<Shop> {
+  const data = await apiClient<ShopResponse>(`/admin/api/tenants/${id}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -68,14 +69,15 @@ export async function getShopById(id: number, token: string): Promise<Shop> {
 }
 
 /**
- * Update shop (requires super-admin auth)
+ * Update tenant (requires super-admin auth)
+ * Superadmin API: /admin/api/tenants/:id
  */
 export async function updateShop(
-  id: number,
+  id: string,
   updates: UpdateShopData,
   token: string
 ): Promise<Shop> {
-  const data = await apiClient<ShopResponse>(`/api/admin/shops/${id}`, {
+  const data = await apiClient<ShopResponse>(`/admin/api/tenants/${id}`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -86,14 +88,15 @@ export async function updateShop(
 }
 
 /**
- * Update shop status (requires super-admin auth)
+ * Update tenant status (requires super-admin auth)
+ * Superadmin API: /admin/api/tenants/:id/status
  */
 export async function updateShopStatus(
-  id: number,
+  id: string,
   status: 'active' | 'blocked' | 'pending',
   token: string
 ): Promise<Shop> {
-  const data = await apiClient<ShopResponse>(`/api/admin/shops/${id}/status`, {
+  const data = await apiClient<ShopResponse>(`/admin/api/tenants/${id}/status`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -104,10 +107,11 @@ export async function updateShopStatus(
 }
 
 /**
- * Delete shop (requires super-admin auth)
+ * Delete tenant (requires super-admin auth)
+ * Superadmin API: /admin/api/tenants/:id
  */
-export async function deleteShop(id: number, token: string): Promise<void> {
-  await apiClient(`/api/admin/shops/${id}`, {
+export async function deleteShop(id: string, token: string): Promise<void> {
+  await apiClient(`/admin/api/tenants/${id}`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,

@@ -254,7 +254,7 @@ export async function createTenant(db: PrismaClient, slug: string, name: string 
     `,
       title,
       defaultBrandColor,
-      `/assets/tenants/${slug}/logo.png`,
+      `/assets/placeholder-logo.svg`,
       'USD'
     );
 
@@ -350,4 +350,116 @@ export async function getAllTenantsAsShops(db: PrismaClient, options: any = {}) 
     slug: tenant.slug,
     schema: getTenantSchema(tenant.id),
   }));
+}
+
+/**
+ * Get all tenants for admin panel (superadmin API)
+ */
+export async function getAllTenantsForAdmin(
+  db: PrismaClient,
+  options: { status?: string; orderBy?: string; order?: string } = {}
+) {
+  const { status, orderBy = 'createdAt', order = 'desc' } = options;
+  const where = status ? { status } : {};
+  const tenants = await db.tenant.findMany({
+    where,
+    orderBy: { [orderBy]: order },
+  });
+  return tenants.map(tenant => ({
+    id: tenant.id,
+    slug: tenant.slug,
+    name: tenant.name,
+    status: tenant.status,
+    createdAt: tenant.createdAt,
+    updatedAt: tenant.updatedAt,
+  }));
+}
+
+/**
+ * Get tenant by ID for admin panel (superadmin API)
+ */
+export async function getTenantByIdForAdmin(db: PrismaClient, id: string) {
+  const tenant = await db.tenant.findUnique({
+    where: { id },
+  });
+  if (!tenant) {
+    return null;
+  }
+  return {
+    id: tenant.id,
+    slug: tenant.slug,
+    name: tenant.name,
+    status: tenant.status,
+    createdAt: tenant.createdAt,
+    updatedAt: tenant.updatedAt,
+  };
+}
+
+/**
+ * Update tenant for admin panel (superadmin API)
+ */
+export async function updateTenantForAdmin(
+  db: PrismaClient,
+  id: string,
+  updates: {
+    name?: string;
+    slug?: string;
+    status?: string;
+  }
+) {
+  const tenant = await db.tenant.update({
+    where: { id },
+    data: updates,
+  });
+  return {
+    id: tenant.id,
+    slug: tenant.slug,
+    name: tenant.name,
+    status: tenant.status,
+    createdAt: tenant.createdAt,
+    updatedAt: tenant.updatedAt,
+  };
+}
+
+/**
+ * Update tenant status for admin panel (superadmin API)
+ */
+export async function updateTenantStatus(db: PrismaClient, id: string, status: string) {
+  const tenant = await db.tenant.update({
+    where: { id },
+    data: { status },
+  });
+  return {
+    id: tenant.id,
+    slug: tenant.slug,
+    name: tenant.name,
+    status: tenant.status,
+    createdAt: tenant.createdAt,
+    updatedAt: tenant.updatedAt,
+  };
+}
+
+/**
+ * Delete tenant for admin panel (superadmin API)
+ */
+export async function deleteTenantForAdmin(db: PrismaClient, id: string) {
+  const tenant = await db.tenant.findUnique({
+    where: { id },
+  });
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  // Delete tenant schema
+  const schemaName = getTenantSchema(id);
+  await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+
+  // Delete tenant record
+  await db.tenant.delete({
+    where: { id },
+  });
+
+  return {
+    message: `Tenant ${tenant.slug} (${id}) deleted`,
+  };
 }

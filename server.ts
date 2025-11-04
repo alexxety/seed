@@ -18,26 +18,27 @@ import {
   getAllOrders,
   updateOrderStatus,
   deleteOrder,
+} from './server/src/db/orders.js';
+import {
   getAllCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+} from './server/src/db/categories.js';
+import {
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+} from './server/src/db/products.js';
+import {
   getAllSettings,
   getSettingsByCategory,
   getSetting,
   updateSetting,
   updateSettings,
   initializeSettings,
-  getAllShops,
-  getShopById,
-  updateShop,
-  updateShopStatus,
-  deleteShop,
-} from './database.js';
+} from './server/src/db/settings.js';
 
 import { deleteShopDNS } from './cloudflare-service.js';
 
@@ -47,6 +48,11 @@ import {
   getTenantBySlug,
   getAllTenantsAsShops,
   isSlugAvailable,
+  getAllTenantsForAdmin,
+  getTenantByIdForAdmin,
+  updateTenantForAdmin,
+  updateTenantStatus,
+  deleteTenantForAdmin,
 } from './server/src/db/tenants.js';
 import { setTenantContext } from './server/src/multitenancy/tenant-context.js';
 import { attachTenantDB, getGlobalPrisma } from './server/src/multitenancy/middleware.js';
@@ -401,7 +407,7 @@ app.post('/api/send-order', apiLimiter, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const order = await createOrder(customer, items, total);
+    const order = await createOrder((req as any).db, customer, items, total);
 
     const itemsList = items
       .map(
@@ -506,7 +512,7 @@ app.get('/api/order/:orderNumber', async (req: Request, res: Response) => {
 app.get('/api/orders', authenticateToken, apiLimiter, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 100;
-    const orders = await getAllOrders(limit);
+    const orders = await getAllOrders((req as any).db, limit);
 
     res.json({
       success: true,
@@ -625,7 +631,7 @@ app.delete(
 // Categories API
 app.get('/api/categories', async (req: Request, res: Response) => {
   try {
-    const categories = await getAllCategories();
+    const categories = await getAllCategories((req as any).db);
     res.json({ success: true, categories });
   } catch (error) {
     logger.error('Error fetching categories:', error);
@@ -637,7 +643,7 @@ app.post('/api/admin/categories', authenticateToken, async (req: Request, res: R
   try {
     const { name, emoji, icon } = req.body;
     const iconValue = emoji || icon;
-    const category = await createCategory(name, iconValue);
+    const category = await createCategory((req as any).db, name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     logger.error('Error creating category:', error);
@@ -650,7 +656,7 @@ app.put('/api/admin/categories/:id', authenticateToken, async (req: Request, res
     const { id } = req.params;
     const { name, emoji, icon } = req.body;
     const iconValue = emoji || icon;
-    const category = await updateCategory(parseInt(id), name, iconValue);
+    const category = await updateCategory((req as any).db, parseInt(id), name, iconValue);
     res.json({ success: true, category });
   } catch (error) {
     logger.error('Error updating category:', error);
@@ -661,7 +667,7 @@ app.put('/api/admin/categories/:id', authenticateToken, async (req: Request, res
 app.delete('/api/admin/categories/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await deleteCategory(parseInt(id));
+    await deleteCategory((req as any).db, parseInt(id));
     res.json({ success: true });
   } catch (error: any) {
     logger.error('Error deleting category:', error);
@@ -712,7 +718,7 @@ app.get('/api/products', async (req: Request, res: Response) => {
 app.get('/api/products/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const product = await getProductById(parseInt(id));
+    const product = await getProductById((req as any).db, parseInt(id));
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -725,7 +731,7 @@ app.get('/api/products/:id', async (req: Request, res: Response) => {
 
 app.post('/api/admin/products', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const product = await createProduct(req.body);
+    const product = await createProduct((req as any).db, req.body);
     res.json({ success: true, product });
   } catch (error) {
     logger.error('Error creating product:', error);
@@ -736,7 +742,7 @@ app.post('/api/admin/products', authenticateToken, async (req: Request, res: Res
 app.put('/api/admin/products/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const product = await updateProduct(parseInt(id), req.body);
+    const product = await updateProduct((req as any).db, parseInt(id), req.body);
     res.json({ success: true, product });
   } catch (error) {
     logger.error('Error updating product:', error);
@@ -747,7 +753,7 @@ app.put('/api/admin/products/:id', authenticateToken, async (req: Request, res: 
 app.delete('/api/admin/products/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await deleteProduct(parseInt(id));
+    await deleteProduct((req as any).db, parseInt(id));
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting product:', error);
@@ -758,7 +764,7 @@ app.delete('/api/admin/products/:id', authenticateToken, async (req: Request, re
 // Settings API
 app.get('/api/admin/settings', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const settings = await getAllSettings();
+    const settings = await getAllSettings((req as any).db);
 
     const settingsForDisplay = settings.map((setting: any) => {
       if (setting.type === 'secret' && setting.displayValue) {
@@ -806,7 +812,7 @@ app.get(
 app.get('/api/admin/settings/:key', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    const setting = await getSetting(key);
+    const setting = await getSetting((req as any).db, key);
 
     if (!setting) {
       return res.status(404).json({ error: 'Setting not found' });
@@ -849,7 +855,7 @@ app.put('/api/admin/settings', authenticateToken, async (req: Request, res: Resp
       return res.status(400).json({ error: 'Settings must be an array' });
     }
 
-    const results = await updateSettings(settings);
+    const results = await updateSettings((req as any).db, settings);
     const allSuccess = results.every((r: any) => r.success);
 
     res.json({
@@ -940,10 +946,17 @@ app.post('/api/shops/register', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/admin/shops', authenticateToken, async (req: Request, res: Response) => {
+// ==============================================================================
+// SUPERADMIN API - Tenant Management (requires superadmin auth)
+// ==============================================================================
+app.get('/admin/api/tenants', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { status, orderBy, order } = req.query;
-    const shops = await getAllShops({ status, orderBy, order });
+    const shops = await getAllTenantsForAdmin(getGlobalPrisma(), {
+      status: status as string,
+      orderBy: orderBy as string,
+      order: order as string
+    });
 
     const shopsForDisplay = shops.map(shop => ({
       ...shop,
@@ -958,10 +971,10 @@ app.get('/api/admin/shops', authenticateToken, async (req: Request, res: Respons
   }
 });
 
-app.get('/api/admin/shops/:id', authenticateToken, async (req: Request, res: Response) => {
+app.get('/admin/api/tenants/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const shop = await getShopById(parseInt(id));
+    const shop = await getTenantByIdForAdmin(getGlobalPrisma(), id);
 
     if (!shop) {
       return res.status(404).json({ error: 'Магазин не найден' });
@@ -974,12 +987,12 @@ app.get('/api/admin/shops/:id', authenticateToken, async (req: Request, res: Res
   }
 });
 
-app.put('/api/admin/shops/:id', authenticateToken, async (req: Request, res: Response) => {
+app.put('/admin/api/tenants/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updates = req.body;
 
-    const shop = await updateShop(parseInt(id), updates);
+    const shop = await updateTenantForAdmin(getGlobalPrisma(), id, updates);
 
     res.json({ success: true, shop });
   } catch (error: any) {
@@ -988,7 +1001,7 @@ app.put('/api/admin/shops/:id', authenticateToken, async (req: Request, res: Res
   }
 });
 
-app.put('/api/admin/shops/:id/status', authenticateToken, async (req: Request, res: Response) => {
+app.put('/admin/api/tenants/:id/status', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -997,7 +1010,7 @@ app.put('/api/admin/shops/:id/status', authenticateToken, async (req: Request, r
       return res.status(400).json({ error: 'Статус обязателен' });
     }
 
-    const shop = await updateShopStatus(parseInt(id), status);
+    const shop = await updateTenantStatus(getGlobalPrisma(), id, status);
 
     res.json({ success: true, shop });
   } catch (error: any) {
@@ -1006,18 +1019,18 @@ app.put('/api/admin/shops/:id/status', authenticateToken, async (req: Request, r
   }
 });
 
-app.delete('/api/admin/shops/:id', authenticateToken, async (req: Request, res: Response) => {
+app.delete('/admin/api/tenants/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const shop = await getShopById(parseInt(id));
+    const shop = await getTenantByIdForAdmin(getGlobalPrisma(), id);
     if (!shop) {
       return res.status(404).json({ error: 'Магазин не найден' });
     }
 
-    await deleteShopDNS(shop.subdomain);
+    await deleteShopDNS(shop.slug);
 
-    await deleteShop(parseInt(id));
+    await deleteTenantForAdmin(getGlobalPrisma(), id);
 
     res.json({ success: true, message: 'Магазин успешно удалён' });
   } catch (error: any) {

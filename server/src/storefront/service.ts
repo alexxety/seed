@@ -20,13 +20,13 @@ export async function getTenantTheme(req: Request) {
       demo: {
         title: 'Demo Shop',
         brand_color: '#0ea5e9',
-        logo_path: '/assets/tenants/demo/logo.png',
+        logo_path: '/assets/placeholder-logo.svg',
         currency: 'USD',
       },
       testshop: {
         title: 'Test Shop',
         brand_color: '#16a34a',
-        logo_path: '/assets/tenants/testshop/logo.png',
+        logo_path: '/assets/placeholder-logo.svg',
         currency: 'USD',
       },
     };
@@ -35,7 +35,7 @@ export async function getTenantTheme(req: Request) {
       defaultThemes[tenantSlug] || {
         title: tenantSlug.charAt(0).toUpperCase() + tenantSlug.slice(1),
         brand_color: '#6366f1',
-        logo_path: null,
+        logo_path: '/assets/placeholder-logo.svg',
         currency: 'USD',
       }
     );
@@ -44,7 +44,7 @@ export async function getTenantTheme(req: Request) {
     return {
       title: (req as any).tenantSlug || 'Shop',
       brand_color: '#6366f1',
-      logo_path: null,
+      logo_path: '/assets/placeholder-logo.svg',
       currency: 'USD',
     };
   }

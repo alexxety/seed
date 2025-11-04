@@ -26,7 +26,7 @@
     "prisma:studio": "prisma studio",
     "db:seed": "node init-data.js",
     "db:migrate": "node migrate-sqlite-to-postgres.js",
-    "create:tenant": "node scripts/create-tenant.js",
+    "create:tenant": "tsx scripts/ops/create-tenant.ts",
     "deploy:dev": "bash scripts/deploy.sh dev",
     "deploy:prod": "bash scripts/deploy.sh prod",
     "postinstall": "prisma generate"
